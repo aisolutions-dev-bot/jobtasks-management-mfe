@@ -1,5 +1,5 @@
 import { CommonModule }                from '@angular/common';
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ViewEncapsulation } from '@angular/core';
 import { FormsModule }                  from '@angular/forms';
 import { LucideAngularModule }          from 'lucide-angular';
 import { firstValueFrom }               from 'rxjs';
@@ -19,6 +19,7 @@ import { TaskDetailDrawerComponent }  from './components/task-detail-drawer/task
 
 @Component({
   selector: 'app-root',
+  encapsulation: ViewEncapsulation.None,
   standalone: true,
   imports: [
     CommonModule, FormsModule, LucideAngularModule,
