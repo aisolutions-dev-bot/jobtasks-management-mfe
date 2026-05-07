@@ -21,7 +21,7 @@ import { AvatarComponent }                                    from '../avatar/av
         <!-- Header -->
         <div class="px-6 pt-6 pb-4 flex items-start justify-between gap-4 border-b sticky top-0 z-10 bg-parchment border-ruleSoft">
           <div class="flex-1 min-w-0">
-            <div class="text-xs mb-2 text-muted tabular-nums">{{ task.jobTaskCode }}</div>
+            <div class="text-xs mb-2 text-muted tabular-nums">{{ task.jobTaskId }}</div>
             <h2 class="font-serif" style="font-size: 30px; line-height: 1.1;">{{ task.taskTitle }}</h2>
 
             <div class="flex items-center gap-2 mt-3 flex-wrap">
@@ -55,9 +55,9 @@ import { AvatarComponent }                                    from '../avatar/av
                       type="button"
                       (click)="statusChange.emit(s.id)"
                       class="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-medium transition-all"
-                      [style.border-color]="task.status === s.id ? s.fg : '#E0D8C5'"
-                      [style.background]="task.status === s.id ? '#F4EFE3' : '#FFFDF8'"
-                      [style.color]="task.status === s.id ? s.fg : '#1A1A1A'">
+                      [style.border-color]="task.jobStatus === s.id ? s.fg : '#E0D8C5'"
+                      [style.background]="task.jobStatus === s.id ? '#F4EFE3' : '#FFFDF8'"
+                      [style.color]="task.jobStatus === s.id ? s.fg : '#1A1A1A'">
                 <lucide-icon [name]="s.icon" [size]="14"></lucide-icon>
                 {{ s.id }}
               </button>
@@ -71,8 +71,8 @@ import { AvatarComponent }                                    from '../avatar/av
               <div class="flex items-center gap-2">
                 <app-avatar [staff]="task.assignor" [size]="32"></app-avatar>
                 <div class="min-w-0">
-                  <div class="text-sm font-medium truncate">{{ task.assignor.staffName }}</div>
-                  <div class="text-xs truncate text-muted">{{ task.assignor.position }}</div>
+                  <div class="text-sm font-medium truncate">{{ task.assignor.name }}</div>
+                  <div class="text-xs truncate text-muted">{{ task.assignor.appointment }}</div>
                 </div>
               </div>
             </div>
@@ -81,8 +81,8 @@ import { AvatarComponent }                                    from '../avatar/av
               <div class="flex items-center gap-2">
                 <app-avatar [staff]="task.assignee" [size]="32"></app-avatar>
                 <div class="min-w-0">
-                  <div class="text-sm font-medium truncate">{{ task.assignee.staffName }}</div>
-                  <div class="text-xs truncate text-muted">{{ task.assignee.position }}</div>
+                  <div class="text-sm font-medium truncate">{{ task.assignee.name }}</div>
+                  <div class="text-xs truncate text-muted">{{ task.assignee.appointment }}</div>
                 </div>
               </div>
             </div>
@@ -128,7 +128,7 @@ import { AvatarComponent }                                    from '../avatar/av
 })
 export class TaskDetailDrawerComponent {
   @Input({ required: true }) task!: JobTask;
-  @Input({ required: true }) currentUserId!: number;
+  @Input({ required: true }) currentUserId!: string;
 
   @Output() close        = new EventEmitter<void>();
   @Output() statusChange = new EventEmitter<Status>();

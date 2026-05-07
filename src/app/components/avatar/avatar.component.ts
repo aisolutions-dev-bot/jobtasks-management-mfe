@@ -15,7 +15,7 @@ import { initials } from '../../models/constants';
       [style.height.px]="size"
       [style.font-size.px]="size * 0.4"
       [style.background]="bg"
-      [title]="staff.staffName">
+      [title]="staff.name">
       {{ label }}
     </div>
   `,
@@ -25,5 +25,5 @@ export class AvatarComponent {
   @Input() size = 32;
 
   get bg():    string { return this.staff.avatarColor ?? '#3F3F46'; }
-  get label(): string { return initials(this.staff.staffName); }
+  get label(): string { return initials(this.staff.name); }
 }

@@ -2,8 +2,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject }    from '@angular/core';
 import { Observable }            from 'rxjs';
 
-import { environment }                                                         from '../../environments/environment';
-import { CreateJobTaskRequest, JobTask, Status, StaffDropdownItem, UpdateStatusRequest } from '../models/task.model';
+import { environment }           from '../../environments/environment';
+import {
+  CreateJobTaskRequest,
+  JobTask,
+  Status,
+  StaffDropdownItem,
+  UpdateStatusRequest,
+} from '../models/task.model';
 
 @Injectable({ providedIn: 'root' })
 export class TaskService {
@@ -15,7 +21,7 @@ export class TaskService {
    * List job tasks with optional RBAC filtering.
    *
    * @param groupAuthority - The user's group authority string (e.g. "GRPADMIN")
-   * @param staffCode      - The user's StaffId varchar from m03Staff (e.g. "S001")
+   * @param staffCode      - The user's StaffId varchar from m03Staff (e.g. "T6923")
    */
   list(groupAuthority?: string, staffCode?: string): Observable<JobTask[]> {
     let params = new HttpParams();
@@ -36,6 +42,12 @@ export class TaskService {
     return this.http.put<JobTask>(`${this.base}/${id}`, req);
   }
 
+  /**
+   * Update task status.
+   * @param id          - m24JobTasks.UniqID (the numeric PK)
+   * @param jobStatus   - new Status value
+   * @param lastEditStaff - the current user's StaffId string
+   */
   updateStatus(id: number, jobStatus: Status, lastEditStaff?: string): Observable<JobTask> {
     const body: UpdateStatusRequest = { jobStatus, lastEditStaff };
     return this.http.patch<JobTask>(`${this.base}/${id}/status`, body);

@@ -93,16 +93,16 @@ import { AvatarComponent }                                        from '../avata
               <div class="grid grid-cols-1 gap-1.5 max-h-72 overflow-y-auto pr-1">
                 <button *ngFor="let s of selectableStaff"
                         type="button"
-                        (click)="assigneeId = s.staffId"
+                        (click)="assigneeId = s.staffCode"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-md border text-left transition-all"
-                        [style.border-color]="assigneeId === s.staffId ? '#1A1A1A' : '#E0D8C5'"
-                        [style.background]="assigneeId === s.staffId ? '#F4EFE3' : '#FFFDF8'">
+                        [style.border-color]="assigneeId === s.staffCode ? '#1A1A1A' : '#E0D8C5'"
+                        [style.background]="assigneeId === s.staffCode ? '#F4EFE3' : '#FFFDF8'">
                   <app-avatar [staff]="s" [size]="32"></app-avatar>
                   <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium">{{ s.staffName }}</div>
-                    <div class="text-xs text-muted">{{ s.position }} · {{ s.department }}</div>
+                    <div class="text-sm font-medium">{{ s.name }}</div>
+                    <div class="text-xs text-muted">{{ s.appointment }} · {{ s.department }}</div>
                   </div>
-                  <lucide-icon *ngIf="assigneeId === s.staffId" name="check" [size]="16" style="color: #1F3D2F;"></lucide-icon>
+                  <lucide-icon *ngIf="assigneeId === s.staffCode" name="check" [size]="16" style="color: #1F3D2F;"></lucide-icon>
                 </button>
               </div>
             </div>
@@ -218,8 +218,8 @@ export class TaskFormModalComponent implements OnInit {
   }
 
   assigneeName(): string {
-    const s = this.staff.find(x => x.staffId === this.assigneeId);
-    return s ? s.staffName : '—';
+    const s = this.staff.find(x => x.staffCode === this.assigneeId);
+    return s ? s.name : '—';
   }
 
   canAdvance(): boolean {
@@ -242,7 +242,7 @@ export class TaskFormModalComponent implements OnInit {
       taskTitle:        this.title.trim(),
       taskType:         this.type,
       taskDescription:  this.description.trim(),
-      assignorStaffId:  this.currentUser.staffId,
+      assignorStaffId:  this.currentUser.staffCode,
       assigneeStaffId:  this.assigneeId,
       priority:         this.priority,
       dueDate:          this.dueDate || null,

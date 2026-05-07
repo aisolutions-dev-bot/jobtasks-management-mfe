@@ -17,7 +17,7 @@ import { Staff }           from '../../models/task.model';
         class="flex items-center gap-3 pl-1 pr-3 py-1 rounded-full border bg-parchment border-rule transition-colors">
         <app-avatar [staff]="me" [size]="32"></app-avatar>
         <div class="text-left">
-          <div class="text-sm font-medium leading-tight">{{ me.staffName }}</div>
+          <div class="text-sm font-medium leading-tight">{{ me.name }}</div>
           <div class="text-xs leading-tight text-muted">Acting as</div>
         </div>
         <lucide-icon name="chevron-down" [size]="14" class="text-muted"></lucide-icon>
@@ -35,8 +35,8 @@ import { Staff }           from '../../models/task.model';
                   class="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-100 transition-colors">
             <app-avatar [staff]="s" [size]="28"></app-avatar>
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium truncate">{{ s.staffName }}</div>
-              <div class="text-xs truncate text-muted">{{ s.position }} · {{ s.department }}</div>
+              <div class="text-sm font-medium truncate">{{ s.name }}</div>
+              <div class="text-xs truncate text-muted">{{ s.appointment }} · {{ s.department }}</div>
             </div>
             <lucide-icon *ngIf="s.staffId === me.staffId" name="check" [size]="14" style="color: #1F3D2F;"></lucide-icon>
           </button>

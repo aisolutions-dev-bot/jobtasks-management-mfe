@@ -159,7 +159,7 @@ export class AppComponent implements OnInit {
   /* ---------- state (signals) ---------- */
   staff           = signal<Staff[]>([]);
   tasks           = signal<JobTask[]>([]);
-  currentUserId   = signal<number>(0);
+  currentUserId   = signal<string>('');
   view            = signal<ViewMode>('assigned');
   filter          = signal<FilterState>({ status: 'all', type: 'all', priority: 'all' });
   search          = signal<string>('');
@@ -189,14 +189,14 @@ export class AppComponent implements OnInit {
         if (view === 'received') return t.assignee.staffId === userId;
         return true;
       })
-      .filter(t => f.status   === 'all' || t.status   === f.status)
+      .filter(t => f.status   === 'all' || t.jobStatus === f.status)
       .filter(t => f.type     === 'all' || t.taskType === f.type)
       .filter(t => f.priority === 'all' || t.priority === f.priority)
       .filter(t => {
         if (!q) return true;
         return t.taskTitle.toLowerCase().includes(q)
             || (t.taskDescription ?? '').toLowerCase().includes(q)
-            || t.jobTaskCode.toLowerCase().includes(q);
+            || t.jobTaskId.toLowerCase().includes(q);
       });
   });
 
@@ -207,9 +207,9 @@ export class AppComponent implements OnInit {
     today.setHours(0, 0, 0, 0);
 
     return {
-      active:    mine.filter(t => t.status === 'In Progress' || t.status === 'Pending').length,
-      completed: mine.filter(t => t.status === 'Completed').length,
-      overdue:   mine.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled'
+      active:    mine.filter(t => t.jobStatus === 'In Progress' || t.jobStatus === 'Pending').length,
+      completed: mine.filter(t => t.jobStatus === 'Completed').length,
+      overdue:   mine.filter(t => t.jobStatus !== 'Completed' && t.jobStatus !== 'Cancelled'
                               && t.dueDate !== null && new Date(t.dueDate) < today).length,
       total:     mine.length,
     };
@@ -237,7 +237,7 @@ export class AppComponent implements OnInit {
   private async loadTasks() {
     try {
       // Fetch all so we can filter client-side across all three views without re-fetching.
-      const all = await firstValueFrom(this.taskApi.list('all', this.currentUserId()));
+      const all = await firstValueFrom(this.taskApi.list());
       this.tasks.set(all);
     } catch (e) {
       console.error('Failed to load tasks', e);
@@ -283,9 +283,9 @@ export class AppComponent implements OnInit {
     if (!task) return;
     try {
       const updated = await firstValueFrom(
-        this.taskApi.updateStatus(task.jobTaskId, status, this.currentUserId())
+        this.taskApi.updateStatus(task.uniqId, status, this.currentUserId())
       );
-      this.tasks.update(list => list.map(t => t.jobTaskId === updated.jobTaskId ? updated : t));
+      this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
       this.activeTask.set(updated);
     } catch (e) {
       console.error('Status update failed', e);
@@ -296,13 +296,13 @@ export class AppComponent implements OnInit {
     const task = this.activeTask();
     if (!task) return;
     try {
-      await firstValueFrom(this.taskApi.delete(task.jobTaskId));
-      this.tasks.update(list => list.filter(t => t.jobTaskId !== task.jobTaskId));
+      await firstValueFrom(this.taskApi.delete(task.uniqId));
+      this.tasks.update(list => list.filter(t => t.uniqId !== task.uniqId));
       this.activeTask.set(null);
     } catch (e) {
       console.error('Delete failed', e);
     }
   }
 
-  trackById(_idx: number, t: JobTask) { return t.jobTaskId; }
+  trackById(_idx: number, t: JobTask) { return t.uniqId; }
 }

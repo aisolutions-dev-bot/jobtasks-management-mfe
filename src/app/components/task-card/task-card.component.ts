@@ -37,7 +37,7 @@ import { AvatarComponent }                                      from '../avatar/
 
       <!-- Title -->
       <div class="px-4 pt-3">
-        <div class="text-xs mb-1 text-muted tabular-nums">{{ task.jobTaskCode }}</div>
+        <div class="text-xs mb-1 text-muted tabular-nums">{{ task.jobTaskId }}</div>
         <h3 class="font-serif leading-snug"
             style="font-size: 22px; letter-spacing: -0.005em;"
             [style.color]="isCompleted ? '#7A6E54' : '#1A1A1A'"
@@ -57,12 +57,12 @@ import { AvatarComponent }                                      from '../avatar/
           <ng-container *ngIf="isMine; else fromBlock">
             <span class="text-xs text-muted">To</span>
             <app-avatar [staff]="task.assignee" [size]="22"></app-avatar>
-            <span class="text-sm font-medium truncate">{{ task.assignee.staffName }}</span>
+            <span class="text-sm font-medium truncate">{{ task.assignee.name }}</span>
           </ng-container>
           <ng-template #fromBlock>
             <span class="text-xs text-muted">From</span>
             <app-avatar [staff]="task.assignor" [size]="22"></app-avatar>
-            <span class="text-sm font-medium truncate">{{ task.assignor.staffName }}</span>
+            <span class="text-sm font-medium truncate">{{ task.assignor.name }}</span>
           </ng-template>
         </div>
 
@@ -79,7 +79,7 @@ import { AvatarComponent }                                      from '../avatar/
       <div class="px-4 pb-3 flex items-center justify-between">
         <div class="inline-flex items-center gap-1.5 text-xs" [style.color]="status.fg">
           <lucide-icon [name]="status.icon" [size]="12"></lucide-icon>
-          <span class="font-medium">{{ task.status }}</span>
+          <span class="font-medium">{{ task.jobStatus }}</span>
         </div>
         <button type="button"
                 (click)="$event.stopPropagation(); cardClick.emit(task)"
@@ -102,9 +102,9 @@ export class TaskCardComponent {
   get type()       { return typeMeta(this.task.taskType); }
   get tone()       { return TONES[this.type.tone]; }
   get prio()       { return priorityMeta(this.task.priority); }
-  get status()     { return statusMeta(this.task.status); }
+  get status()     { return statusMeta(this.task.jobStatus); }
   get due()        { return formatDue(this.task.dueDate); }
-  get isCompleted(){ return this.task.status === 'Completed'; }
+  get isCompleted(){ return this.task.jobStatus === 'Completed'; }
 
   get dueColor(): string {
     if (!this.due) return '#7A6E54';

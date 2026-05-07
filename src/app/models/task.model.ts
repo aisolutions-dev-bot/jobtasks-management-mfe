@@ -1,30 +1,55 @@
 /**
  * Mirrors the JobTaskResponse and StaffSummary records returned by the
- * Quarkus backend. Keep this file in sync with /backend/.../JobTaskDtos.java.
+ * Quarkus backend (com.aisolutions.jobtaskmanagement).
+ *
+ * Key differences from original scaffold (important — do not revert):
+ *  - Staff.staffCode  = Long (m03Staff.Code, the numeric PK)
+ *  - Staff.staffId    = string (m03Staff.StaffId, e.g. "T6923")
+ *  - Staff.name       = display name  (NOT staffName)
+ *  - Staff.appointment= job title     (NOT position)
+ *  - JobTask.uniqId   = number (m24JobTasks.UniqID, the PK)
+ *  - JobTask.jobTaskId= string code   (e.g. "JT-2026-0001")
+ *  - JobTask.jobStatus= status string (NOT status)
  */
 
 export interface Staff {
-  staffId:      number;
-  staffName:    string;
+  staffCode:    number;        // m03Staff.Code — numeric PK
+  staffId:      string;        // m03Staff.StaffId — varchar e.g. "T6923"
+  name:         string;        // m03Staff.Name
   department:   string | null;
-  position:     string | null;
+  appointment:  string | null; // m03Staff.Appointment (job title)
+  avatarColor:  string | null;
+}
+
+/** Used in staff dropdown selects */
+export interface StaffDropdownItem {
+  staffCode:    number;
+  staffId:      string;
+  name:         string;
+  department:   string | null;
+  appointment:  string | null;
   avatarColor:  string | null;
 }
 
 export interface JobTask {
-  jobTaskId:        number;
-  jobTaskCode:      string;
+  uniqId:           number;        // m24JobTasks.UniqID — the true PK
+  jobTaskId:        string;        // m24JobTasks.JobTaskId — display code e.g. "JT-2026-0001"
   taskTitle:        string;
   taskType:         TaskType;
   taskDescription:  string | null;
   priority:         Priority;
-  status:           Status;
-  dueDate:          string | null;       // ISO date (yyyy-MM-dd)
-  startedDate:      string | null;       // ISO datetime
+  jobStatus:        Status;        // m24JobTasks.JobStatus column (NOT status)
+  dueDate:          string | null;
+  startedDate:      string | null;
   completedDate:    string | null;
+  estimatedHours:   number | null;
+  actualHours:      number | null;
   remarks:          string | null;
-  createdDate:      string;
-  modifiedDate:     string | null;
+  attachmentPath:   string | null;
+  entryStaff:       string | null;
+  entryDate:        string | null;
+  lastEditStaff:    string | null;
+  lastEdtiDate:     string | null; // preserved typo from DB column name
   assignor:         Staff;
   assignee:         Staff;
 }
@@ -42,15 +67,16 @@ export interface CreateJobTaskRequest {
   taskTitle:        string;
   taskType:         TaskType;
   taskDescription?: string;
-  assignorStaffId:  number;
-  assigneeStaffId:  number;
+  assignorStaffId:  number;  // m03Staff.Code
+  assigneeStaffId:  number;  // m03Staff.Code
   priority?:        Priority;
   dueDate?:         string | null;
+  entryStaff?:      string;
 }
 
 export interface UpdateStatusRequest {
-  status:     Status;
-  modifiedBy: number;
+  jobStatus:      Status;       // matches backend PATCH body field
+  lastEditStaff?: string;
 }
 
 export interface FilterState {
