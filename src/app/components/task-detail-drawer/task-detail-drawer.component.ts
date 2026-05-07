@@ -142,6 +142,7 @@ export class TaskDetailDrawerComponent {
   get due()        { return formatDue(this.task.dueDate); }
   get isAssignor() { return this.task.assignor.staffId === this.currentUserId; }
   get createdLabel(): string {
+    if (!this.task.entryDate) return '—';
     return new Date(this.task.entryDate)
       .toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
