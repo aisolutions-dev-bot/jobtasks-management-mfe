@@ -1,0 +1,173 @@
+// ============== App Component Styles ==============
+
+:host {
+  display: block;
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+}
+
+// ──── Header ────
+header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+  }
+}
+
+// ──── Main Content ────
+main {
+  min-height: calc(100vh - 80px);
+}
+
+// ──── Grid ────
+.grid {
+  display: grid;
+
+  &.grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &.grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ──── Filter Tabs ────
+.flex gap-3 mb-6 button {
+  transition: all 0.2s ease;
+
+  &.active {
+    background-color: #1a1a1a;
+    color: white;
+  }
+
+  &:not(.active) {
+    background-color: #f3f1f0;
+    color: #6b7280;
+
+    &:hover {
+      background-color: #ede8e4;
+    }
+  }
+}
+
+// ──── Search Input ────
+input[type='text'] {
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #1a1a1a;
+    box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+  }
+}
+
+// ──── Buttons ────
+button {
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  transition: all 0.2s ease;
+
+  lucide-icon {
+    vertical-align: middle;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ──── Responsive ────
+@media (max-width: 768px) {
+  header {
+    .max-w-7xl {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  }
+
+  main {
+    .max-w-7xl {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ──── Typography ────
+.font-serif {
+  font-family: 'Instrument Serif', serif;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+// ──── Utilities ────
+.uppercase {
+  text-transform: uppercase;
+}
+
+.tracking-widest {
+  letter-spacing: 0.1em;
+}
+
+.leading-none {
+  line-height: 1;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+
+// ──── Animation ────
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

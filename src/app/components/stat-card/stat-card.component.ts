@@ -1,28 +1,41 @@
-import { CommonModule }       from '@angular/common';
-import { Component, Input }   from '@angular/core';
+import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-stat-card',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="rounded-lg border p-4 relative overflow-hidden bg-parchment border-rule">
-      <div class="text-xs uppercase tracking-wider mb-2 text-muted">{{ label }}</div>
-      <div class="flex items-end gap-2">
-        <div class="font-serif leading-none" style="font-size: 44px;" [style.color]="accent">
-          {{ value }}
-        </div>
-        <div *ngIf="pulse"
-             class="mb-2 w-2 h-2 rounded-full animate-soft-pulse"
-             [style.background]="accent"></div>
-      </div>
-      <div class="absolute top-0 right-0 w-1 h-full opacity-50" [style.background]="accent"></div>
+    <div class="rounded-lg p-6 flex flex-col gap-2" [style.backgroundColor]="bgColor">
+      <span class="text-xs uppercase tracking-widest font-medium" [style.color]="labelColor">
+        {{ label }}
+      </span>
+      <div class="font-serif text-5xl font-light leading-none">{{ value }}</div>
     </div>
   `,
+  styles: [`
+    :host {
+      display: block;
+    }
+
+    div {
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+      }
+    }
+
+    .font-serif {
+      font-family: 'Instrument Serif', serif;
+    }
+  `],
 })
 export class StatCardComponent {
-  @Input({ required: true }) label!: string;
-  @Input({ required: true }) value!: number;
-  @Input({ required: true }) accent!: string;
-  @Input() pulse = false;
+  @Input() label: string = '';
+  @Input() value: number = 0;
+  @Input() labelColor: string = '#1A1A1A';
+  @Input() bgColor: string = '#ECE6DD';
 }

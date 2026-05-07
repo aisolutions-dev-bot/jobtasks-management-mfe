@@ -1,0 +1,161 @@
+<!-- ============== HEADER ============== -->
+<header class="border-b" style="border-color: #D4CCBE; background-color: #F4EFE3;">
+  <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+    <!-- Brand -->
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-md flex items-center justify-center" style="background: #1A1A1A;">
+        <lucide-icon name="sparkles" [size]="18" style="color: #F4EFE3;"></lucide-icon>
+      </div>
+      <div>
+        <div class="flex items-baseline gap-2">
+          <h1 class="font-serif text-2xl leading-none" style="letter-spacing: -0.01em;">Taskwright</h1>
+          <span class="text-xs uppercase tracking-widest text-gray-600">m24</span>
+        </div>
+        <div class="text-xs mt-0.5 text-gray-600">Assign work · Track progress · Stay in flow</div>
+      </div>
+    </div>
+
+    <!-- User Switcher -->
+    <app-user-switcher
+      *ngIf="me()"
+      [me]="me()!"
+      [staff]="staff()"
+      (selectStaff)="onSelectStaff($event)"
+    />
+  </div>
+</header>
+
+<!-- ============== MAIN CONTENT ============== -->
+<main class="min-h-screen" style="background-color: #FDFAF3;">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <!-- ──── SUMMARY STATS ──── -->
+    <div class="grid grid-cols-4 gap-4 mb-8">
+      <app-stat-card
+        label="ACTIVE"
+        [value]="activeCount()"
+        labelColor="#A73838"
+        bgColor="#ECE6DD"
+      />
+      <app-stat-card
+        label="COMPLETED"
+        [value]="completedCount()"
+        labelColor="#3ECF8E"
+        bgColor="#ECE6DD"
+      />
+      <app-stat-card
+        label="OVERDUE"
+        [value]="overdueCount()"
+        labelColor="#D98A3A"
+        bgColor="#ECE6DD"
+      />
+      <app-stat-card
+        label="TOTAL ASSIGNED"
+        [value]="totalCount()"
+        labelColor="#1A1A1A"
+        bgColor="#ECE6DD"
+      />
+    </div>
+
+    <!-- ──── FILTER TABS ──── -->
+    <div class="flex gap-3 mb-6">
+      <button
+        *ngFor="let tab of filterTabs"
+        (click)="onFilterChange(tab.key)"
+        class="px-4 py-2 rounded-full text-sm font-medium transition"
+        [class.active]="filterState().groupAuthority === tab.key"
+        [ngClass]="{
+          'bg-black text-white': filterState().groupAuthority === tab.key,
+          'bg-gray-100 text-gray-700 hover:bg-gray-200': filterState().groupAuthority !== tab.key
+        }"
+      >
+        {{ tab.label }} <span class="text-xs opacity-75">{{ tab.count() }}</span>
+      </button>
+    </div>
+
+    <!-- ──── SEARCH & ACTIONS ──── -->
+    <div class="flex gap-3 mb-6">
+      <!-- Search Input -->
+      <div class="relative flex-1">
+        <input
+          type="text"
+          placeholder="Search tasks..."
+          class="w-full px-4 py-2 rounded-lg border"
+          style="border-color: #D4CCBE; background-color: white;"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange($event)"
+        />
+        <lucide-icon
+          name="search"
+          [size]="16"
+          class="absolute right-3 top-3 text-gray-400"
+        />
+      </div>
+
+      <!-- Filter Button -->
+      <button
+        class="px-4 py-2 rounded-lg border font-medium transition"
+        style="border-color: #D4CCBE; color: #1A1A1A;"
+      >
+        <lucide-icon name="filter" [size]="16" class="inline mr-2" />
+        Filters
+      </button>
+
+      <!-- New Task Button -->
+      <button
+        (click)="onOpenTaskForm()"
+        class="px-4 py-2 rounded-lg font-medium text-white transition"
+        style="background-color: #1A1A1A;"
+      >
+        <lucide-icon name="plus" [size]="16" class="inline mr-2" />
+        New task
+      </button>
+    </div>
+
+    <!-- ──── TASK LIST ──── -->
+    <div class="grid grid-cols-2 gap-6">
+      <div
+        *ngFor="let task of filteredTasks()"
+        class="cursor-pointer"
+        (click)="onSelectTask(task)"
+      >
+        <app-task-card [task]="task" />
+      </div>
+
+      <!-- Empty State -->
+      <div
+        *ngIf="filteredTasks().length === 0 && !loading()"
+        class="col-span-2 text-center py-12 text-gray-500"
+      >
+        <lucide-icon name="inbox" [size]="48" class="mx-auto mb-4 opacity-50" />
+        <p>No tasks found</p>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="loading()" class="col-span-2 text-center py-12">
+        <lucide-icon name="loader" [size]="24" class="mx-auto animate-spin" />
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============== MODALS & DRAWERS ============== -->
+
+<!-- Task Form Modal -->
+<app-task-form-modal
+  *ngIf="showTaskForm()"
+  [staff]="staff()"
+  [me]="me()!"
+  (create)="onCreateTask($event)"
+  (cancel)="onCloseTaskForm()"
+/>
+
+<!-- Task Detail Drawer -->
+<app-task-detail-drawer
+  *ngIf="showTaskDetail() && selectedTask()"
+  [task]="selectedTask()!"
+  [staff]="staff()"
+  [me]="me()!"
+  (close)="onCloseTaskDetail()"
+  (delete)="onDeleteTask(selectedTask()!.uniqId)"
+  (statusChanged)="onTaskStatusChanged()"
+/>
