@@ -67,8 +67,8 @@ export interface CreateJobTaskRequest {
   taskTitle:        string;
   taskType:         TaskType;
   taskDescription?: string;
-  assignorStaffId:  number;  // m03Staff.Code
-  assigneeStaffId:  number;  // m03Staff.Code
+  assignorStaffId:  string;  // m03Staff.StaffId (varchar)
+  assigneeStaffId:  string;  // m03Staff.StaffId (varchar)
   priority?:        Priority;
   dueDate?:         string | null;
   entryStaff?:      string;
