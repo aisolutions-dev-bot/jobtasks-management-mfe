@@ -69,6 +69,7 @@ export class TaskFormModalComponent {
       taskType: this.taskType() as import("../../models/task.model").TaskType,
       taskDescription: this.taskDescription(),
       priority: this.priority() as import("../../models/task.model").Priority,
+      assignorStaffId:   this.me?.staffCode || 0,
       assigneeStaffId:   this.assignee()?.staffCode || 0,
       dueDate: this.dueDate(),
     };
