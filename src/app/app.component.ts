@@ -119,7 +119,7 @@ export class AppComponent implements OnInit {
     this.loadTasks();
   }
 
-  private loadStaff() {
+  loadStaff() {
     this.staffService.list().subscribe({
       next: list => {
         this.staff.set(list);
@@ -172,6 +172,8 @@ export class AppComponent implements OnInit {
     this.wizardStep.set(1);
     this.newTitle.set(''); this.newType.set(''); this.newAssignee.set(null);
     this.newPriority.set('Medium'); this.newDueDate = null; this.newDesc.set('');
+    // Reload staff if empty (e.g. initial CORS-blocked load)
+    if (this.staff().length === 0) this.loadStaff();
     this.showWizard.set(true);
   }
 

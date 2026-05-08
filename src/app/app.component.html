@@ -250,6 +250,11 @@
   @if (wizardStep() === 2) {
     <div class="wizard-body">
       <label class="field-label">Assign to</label>
+      @if (staff().length === 0) {
+        <div class="staff-empty">
+          <i class="pi pi-spin pi-spinner"></i> Loading staff list...
+        </div>
+      } @else {
       <div class="staff-list">
         @for (s of staff(); track s.staffCode) {
           <div class="staff-item"
@@ -266,6 +271,7 @@
           </div>
         }
       </div>
+      }
 
       <div class="wizard-row mt-3">
         <div class="flex-1">
