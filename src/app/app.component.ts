@@ -151,7 +151,8 @@ export class AppComponent implements OnInit {
 
   private loadTasks() {
     this.loading.set(true);
-    this.taskService.list().subscribe({
+    const staffCode = this.me()?.staffId;
+    this.taskService.list(undefined, staffCode).subscribe({
       next:  list  => { this.tasks.set(list); this.loading.set(false); },
       error: e     => { console.error('loadTasks error', e); this.loading.set(false); },
     });
