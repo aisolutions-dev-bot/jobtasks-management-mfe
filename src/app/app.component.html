@@ -281,7 +281,7 @@
         </div>
         <div class="flex-1">
           <label class="field-label">Due date</label>
-          <p-datepicker [(ngModel)]="newDueDate"
+          <p-datepicker [(ngModel)]="newDueDate" appendTo="body"
                        placeholder="Select date"
                        dateFormat="dd/mm/yy"
                        [showIcon]="true"
@@ -308,7 +308,7 @@
         <div class="review-row"><span class="review-label">Assignee</span><span>{{ newAssignee()?.name }}</span></div>
         <div class="review-row"><span class="review-label">Priority</span><span>{{ newPriority() }}</span></div>
         <div class="review-row"><span class="review-label">Due</span>
-          <span>{{ newDueDate() ? (newDueDate() | date:'dd MMM yyyy') : '—' }}</span></div>
+          <span>{{ newDueDate ? (newDueDate | date:'dd MMM yyyy') : '—' }}</span></div>
       </div>
     </div>
   }

@@ -58,7 +58,7 @@ export class AppComponent implements OnInit {
   newType     = signal<TaskType | ''>('');
   newAssignee = signal<Staff | null>(null);
   newPriority = signal<Priority>('Medium');
-  newDueDate  = signal<Date | null>(null);
+  newDueDate: Date | null = null;
   newDesc     = signal('');
 
   // Status options
@@ -171,7 +171,7 @@ export class AppComponent implements OnInit {
   openWizard() {
     this.wizardStep.set(1);
     this.newTitle.set(''); this.newType.set(''); this.newAssignee.set(null);
-    this.newPriority.set('Medium'); this.newDueDate.set(null); this.newDesc.set('');
+    this.newPriority.set('Medium'); this.newDueDate = null; this.newDesc.set('');
     this.showWizard.set(true);
   }
 
@@ -196,7 +196,7 @@ export class AppComponent implements OnInit {
       assignorStaffId: me.staffCode,
       assigneeStaffId: assignee.staffCode,
       priority:        this.newPriority(),
-      dueDate:         this.newDueDate() ? this.newDueDate()!.toISOString().split('T')[0] : null,
+      dueDate:         this.newDueDate ? this.newDueDate.toISOString().split('T')[0] : null,
       entryStaff:      me.staffId,
     };
 
