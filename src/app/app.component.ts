@@ -123,10 +123,30 @@ export class AppComponent implements OnInit {
     this.staffService.list().subscribe({
       next: list => {
         this.staff.set(list);
-        if (list.length) this.me.set(list[0]);
+        // Identify logged-in user from JWT stored in localStorage by the shell
+        const loggedInStaffId = this.getLoggedInStaffId();
+        const currentUser = loggedInStaffId
+          ? list.find(s => s.staffId === loggedInStaffId) ?? list[0]
+          : list[0];
+        this.me.set(currentUser ?? null);
       },
       error: e => console.error('loadStaff error', e),
     });
+  }
+
+  /** Read staffId from shell JWT token in localStorage */
+  private getLoggedInStaffId(): string | null {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return null;
+      // JWT payload is the second segment, base64-encoded
+      const payload = token.split('.')[1];
+      if (!payload) return null;
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      return decoded?.staffId || decoded?.secLoginId || decoded?.sub || null;
+    } catch {
+      return null;
+    }
   }
 
   private loadTasks() {
