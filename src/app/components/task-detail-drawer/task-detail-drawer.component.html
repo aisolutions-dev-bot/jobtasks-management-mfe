@@ -1,0 +1,128 @@
+<!-- Overlay -->
+<div class="fixed inset-0 bg-black/50 z-40" (click)="onClose()"></div>
+
+<!-- Drawer -->
+<div class="fixed right-0 top-0 h-full w-1/2 bg-white shadow-2xl z-50 overflow-y-auto">
+  <!-- Header -->
+  <div class="sticky top-0 bg-white border-b p-6 flex justify-between items-start gap-4">
+    <div class="flex-1">
+      <div class="text-xs text-gray-500 mb-2">{{ task.jobTaskId }}</div>
+      <h2 class="font-serif text-2xl font-light">{{ task.taskTitle }}</h2>
+    </div>
+    <button
+      (click)="onClose()"
+      class="text-gray-400 hover:text-gray-600 transition"
+    >
+      <lucide-icon name="x" [size]="24" />
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="p-6 space-y-6">
+    <!-- Type & Priority Badges -->
+    <div class="flex gap-3">
+      <span
+        class="text-xs font-medium px-3 py-1 rounded-full"
+        [style.backgroundColor]="getTypeColor(task.taskType)"
+      >
+        {{ task.taskType }}
+      </span>
+      <span
+        class="text-xs font-medium px-3 py-1 rounded-full text-white"
+        [style.backgroundColor]="getPriorityColor(task.priority)"
+      >
+        {{ task.priority }}
+      </span>
+    </div>
+
+    <!-- Status Section -->
+    <div>
+      <h3 class="text-sm font-medium mb-3 uppercase tracking-wide text-gray-600">Status</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <button
+          *ngFor="let status of statuses"
+          (click)="onStatusChange(status)"
+          class="px-4 py-3 rounded-lg font-medium text-sm transition"
+          [class.selected]="selectedStatus === status"
+          [ngClass]="{
+            'bg-green-500 text-white': selectedStatus === status,
+            'bg-gray-100 text-gray-600 hover:bg-gray-200': selectedStatus !== status
+          }"
+        >
+          {{ status === 'PENDING' ? 'Pending' : status === 'IN_PROGRESS' ? 'In Progress' : status === 'ON_HOLD' ? 'On Hold' : 'Completed' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Assignor & Assignee -->
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Assignor -->
+      <div class="p-4 rounded-lg" style="background-color: #ECE6DD;">
+        <div class="text-xs uppercase tracking-wide text-gray-600 mb-3">Assigned by</div>
+        <div class="flex items-center gap-3">
+          <app-avatar
+            *ngIf="task.assignor"
+            [name]="task.assignor.name"
+            [avatarColor]="task.assignor.avatarColor"
+            [size]="32"
+          />
+          <div class="text-sm">
+            <div class="font-medium">{{ task.assignor?.name }}</div>
+            <div class="text-xs text-gray-600">{{ task.assignor?.appointment }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignee -->
+      <div class="p-4 rounded-lg" style="background-color: #ECE6DD;">
+        <div class="text-xs uppercase tracking-wide text-gray-600 mb-3">Assigned to</div>
+        <div class="flex items-center gap-3">
+          <app-avatar
+            *ngIf="task.assignee"
+            [name]="task.assignee.name"
+            [avatarColor]="task.assignee.avatarColor"
+            [size]="32"
+          />
+          <div class="text-sm">
+            <div class="font-medium">{{ task.assignee?.name }}</div>
+            <div class="text-xs text-gray-600">{{ task.assignee?.appointment }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dates -->
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <div class="text-xs uppercase tracking-wide text-gray-600 mb-2">Due Date</div>
+        <div class="text-sm font-medium">{{ formatDate(task.dueDate) }}</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wide text-gray-600 mb-2">Created</div>
+        <div class="text-sm font-medium">{{ formatDate(task.entryDate) }}</div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div>
+      <label class="text-xs uppercase tracking-wide text-gray-600 block mb-2">Description</label>
+      <textarea
+        class="w-full p-3 border rounded-lg resize-none"
+        style="border-color: #D4CCBE;"
+        rows="6"
+        disabled
+      >{{ task.taskDescription }}</textarea>
+    </div>
+
+    <!-- Delete Button -->
+    <div class="pt-4 border-t">
+      <button
+        (click)="onDelete()"
+        class="w-full px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium transition text-sm"
+      >
+        <lucide-icon name="trash-2" [size]="16" class="inline mr-2" />
+        Delete task
+      </button>
+    </div>
+  </div>
+</div>
