@@ -1,119 +1,119 @@
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal, computed, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { TagModule } from 'primeng/tag';
+import { BadgeModule } from 'primeng/badge';
+import { DialogModule } from 'primeng/dialog';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
+import { AvatarModule } from 'primeng/avatar';
+import { DividerModule } from 'primeng/divider';
+import { DatePickerModule } from 'primeng/datepicker';
+import { TextareaModule } from 'primeng/textarea';
+import { SelectModule } from 'primeng/select';
+import { ListboxModule } from 'primeng/listbox';
 
-import { CreateJobTaskRequest, FilterState, JobTask, Staff, Status } from './models/task.model';
+import { JobTask, Staff, Status, TaskType, Priority, CreateJobTaskRequest } from './models/task.model';
 import { TaskService } from './services/task.service';
 import { StaffService } from './services/staff.service';
 
-import { AvatarComponent } from './components/avatar/avatar.component';
-import { StatCardComponent } from './components/stat-card/stat-card.component';
-import { UserSwitcherComponent } from './components/user-switcher/user-switcher.component';
-import { FilterPopoverComponent } from './components/filter-popover/filter-popover.component';
-import { TaskCardComponent } from './components/task-card/task-card.component';
-import { TaskFormModalComponent } from './components/task-form-modal/task-form-modal.component';
-import { TaskDetailDrawerComponent } from './components/task-detail-drawer/task-detail-drawer.component';
-
 @Component({
   selector: 'app-root',
-  encapsulation: ViewEncapsulation.None,
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    LucideAngularModule,
-    AvatarComponent,
-    StatCardComponent,
-    UserSwitcherComponent,
-    FilterPopoverComponent,
-    TaskCardComponent,
-    TaskFormModalComponent,
-    TaskDetailDrawerComponent,
+    CommonModule, FormsModule,
+    CardModule, ButtonModule, InputTextModule, TagModule, BadgeModule,
+    DialogModule, SelectButtonModule, ToastModule, AvatarModule,
+    DividerModule, DatePickerModule, TextareaModule, SelectModule, ListboxModule,
   ],
+  providers: [MessageService],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
-  private taskService = inject(TaskService);
+  private taskService  = inject(TaskService);
   private staffService = inject(StaffService);
+  private msgService   = inject(MessageService);
 
-  // ──── Signals ────
-  staff = signal<Staff[]>([]);
-  tasks = signal<JobTask[]>([]);
-  me = signal<Staff | null>(null);
-  selectedTask = signal<JobTask | null>(null);
-  showTaskForm = signal(false);
-  showTaskDetail = signal(false);
+  // ── State ──────────────────────────────────────────────────────────────────
+  staff       = signal<Staff[]>([]);
+  tasks       = signal<JobTask[]>([]);
+  me          = signal<Staff | null>(null);
+  activeView  = signal<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
   searchQuery = signal('');
-  filterState = signal<FilterState>({ viewMode: 'ALL', status: 'all', type: 'all', priority: 'all' });
-  loading = signal(false);
+  loading     = signal(false);
 
-  // ──── Computed Values ────
-  filteredTasks = computed(() => {
-    let filtered = this.tasks();
+  // Detail dialog
+  showDetail    = signal(false);
+  selectedTask  = signal<JobTask | null>(null);
 
-    // Search filter
-    if (this.searchQuery()) {
-      const q = this.searchQuery().toLowerCase();
-      filtered = filtered.filter(
-        (t) =>
-          t.taskTitle?.toLowerCase().includes(q) ||
-          t.taskDescription?.toLowerCase().includes(q) ||
-          t.jobTaskId?.toLowerCase().includes(q)
-      );
-    }
+  // Create wizard
+  showWizard  = signal(false);
+  wizardStep  = signal(1);
+  newTitle    = signal('');
+  newType     = signal<TaskType | ''>('');
+  newAssignee = signal<Staff | null>(null);
+  newPriority = signal<Priority>('Medium');
+  newDueDate  = signal<Date | null>(null);
+  newDesc     = signal('');
 
-    // Filter by group authority
-    const filter = this.filterState();
-    if (filter.viewMode === 'ASSIGNED_BY_ME') {
-      filtered = filtered.filter((t) => t.assignor?.staffCode === this.me()?.staffCode);
-    } else if (filter.viewMode === 'ASSIGNED_TO_ME') {
-      filtered = filtered.filter((t) => t.assignee?.staffCode === this.me()?.staffCode);
-    }
-
-    return filtered;
-  });
-
-  // Statistics
-  activeCount = computed(() => {
-    return this.tasks().filter((t) => t.jobStatus === 'In Progress' || t.jobStatus === 'Pending').length;
-  });
-
-  completedCount = computed(() => {
-    return this.tasks().filter((t) => t.jobStatus === 'Completed').length;
-  });
-
-  overdueCount = computed(() => {
-    const now = new Date();
-    return this.tasks().filter(
-      (t) =>
-        t.dueDate &&
-        new Date(t.dueDate) < now &&
-        (t.jobStatus === 'Pending' || t.jobStatus === 'In Progress')
-    ).length;
-  });
-
-  totalCount = computed(() => this.tasks().length);
-
-  // Filter tab counts
-  assignedByMeCount = computed(() => {
-    return this.tasks().filter((t) => t.assignor?.staffCode === this.me()?.staffCode).length;
-  });
-
-  assignedToMeCount = computed(() => {
-    return this.tasks().filter((t) => t.assignee?.staffCode === this.me()?.staffCode).length;
-  });
-
-  allCount = computed(() => this.tasks().length);
-
-  // Filter tabs
-  filterTabs = [
-    { label: 'I assigned', key: 'ASSIGNED_BY_ME', count: this.assignedByMeCount },
-    { label: 'Assigned to me', key: 'ASSIGNED_TO_ME', count: this.assignedToMeCount },
-    { label: 'All', key: 'ALL', count: this.allCount },
+  // Status options
+  statusOptions = [
+    { label: 'Pending',     value: 'Pending' },
+    { label: 'In Progress', value: 'In Progress' },
+    { label: 'On Hold',     value: 'On Hold' },
+    { label: 'Completed',   value: 'Completed' },
   ];
 
+  taskTypes: TaskType[] = [
+    'Software Development', 'Job Support', 'System Enquiries',
+    'Technical Support', 'Bug Fix', 'Documentation',
+  ];
+
+  priorities: Priority[] = ['Low', 'Medium', 'High', 'Urgent'];
+
+  viewTabs = [
+    { label: 'All',            value: 'ALL' },
+    { label: 'I assigned',     value: 'ASSIGNED_BY_ME' },
+    { label: 'Assigned to me', value: 'ASSIGNED_TO_ME' },
+  ];
+
+  // ── Computed ───────────────────────────────────────────────────────────────
+  filteredTasks = computed(() => {
+    let list = this.tasks();
+    const q  = this.searchQuery().toLowerCase().trim();
+    const me = this.me();
+    const v  = this.activeView();
+
+    if (v === 'ASSIGNED_BY_ME' && me)
+      list = list.filter(t => t.assignor?.staffCode === me.staffCode);
+    if (v === 'ASSIGNED_TO_ME' && me)
+      list = list.filter(t => t.assignee?.staffCode === me.staffCode);
+    if (q) list = list.filter(t =>
+      t.taskTitle.toLowerCase().includes(q) ||
+      t.jobTaskId?.toLowerCase().includes(q) ||
+      (t.taskDescription ?? '').toLowerCase().includes(q));
+    return list;
+  });
+
+  stats = computed(() => {
+    const all  = this.tasks();
+    const now  = new Date(); now.setHours(0,0,0,0);
+    return {
+      active:    all.filter(t => t.jobStatus === 'In Progress' || t.jobStatus === 'Pending').length,
+      completed: all.filter(t => t.jobStatus === 'Completed').length,
+      overdue:   all.filter(t =>
+        t.jobStatus !== 'Completed' && t.jobStatus !== 'Cancelled' &&
+        t.dueDate != null && new Date(t.dueDate) < now).length,
+      total:     all.length,
+    };
+  });
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
   ngOnInit() {
     this.loadStaff();
     this.loadTasks();
@@ -121,80 +121,119 @@ export class AppComponent implements OnInit {
 
   private loadStaff() {
     this.staffService.list().subscribe({
-      next: (staffList) => {
-        this.staff.set(staffList);
-        // Set first staff as me
-        if (staffList.length > 0) {
-          this.me.set(staffList[0]);
-        }
+      next: list => {
+        this.staff.set(list);
+        if (list.length) this.me.set(list[0]);
       },
+      error: e => console.error('loadStaff error', e),
     });
   }
 
   private loadTasks() {
     this.loading.set(true);
     this.taskService.list().subscribe({
-      next: (taskList) => {
-        this.tasks.set(taskList);
-        this.loading.set(false);
-      },
+      next:  list  => { this.tasks.set(list); this.loading.set(false); },
+      error: e     => { console.error('loadTasks error', e); this.loading.set(false); },
     });
   }
 
-  onSelectStaff(staff: Staff) {
-    this.me.set(staff);
-    this.loadTasks();
-  }
-
-  onFilterChange(key: string) {
-    const state = this.filterState();
-    this.filterState.set({ ...state, viewMode: key as any });
-  }
-
-  onSearchChange(query: string) {
-    this.searchQuery.set(query);
-  }
-
-  onOpenTaskForm() {
-    this.showTaskForm.set(true);
-  }
-
-  onCloseTaskForm() {
-    this.showTaskForm.set(false);
-  }
-
-  onCreateTask(data: CreateJobTaskRequest) {
-    this.taskService.create(data).subscribe({
-      next: () => {
-        this.showTaskForm.set(false);
-        this.loadTasks();
-      },
-    });
-  }
-
-  onSelectTask(task: JobTask) {
+  // ── Interactions ───────────────────────────────────────────────────────────
+  openTask(task: JobTask) {
     this.selectedTask.set(task);
-    this.showTaskDetail.set(true);
+    this.showDetail.set(true);
   }
 
-  onCloseTaskDetail() {
-    this.showTaskDetail.set(false);
-    this.selectedTask.set(null);
+  onStatusChange(task: JobTask, status: Status) {
+    this.taskService.updateStatus(task.uniqId, status, String(this.me()?.staffCode ?? '')).subscribe({
+      next: updated => {
+        this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
+        this.selectedTask.set(updated);
+        this.msgService.add({ severity: 'success', summary: 'Status updated', life: 2000 });
+      },
+      error: e => { console.error(e); this.msgService.add({ severity: 'error', summary: 'Failed to update status', life: 3000 }); },
+    });
   }
 
-  onDeleteTask(taskId: number) {
-    if (confirm('Are you sure you want to delete this task?')) {
-      this.taskService.delete(taskId).subscribe({
-        next: () => {
-          this.showTaskDetail.set(false);
-          this.selectedTask.set(null);
-          this.loadTasks();
-        },
-      });
-    }
+  onDeleteTask() {
+    const task = this.selectedTask();
+    if (!task) return;
+    if (!confirm('Delete this task?')) return;
+    this.taskService.delete(task.uniqId).subscribe({
+      next: () => {
+        this.tasks.update(list => list.filter(t => t.uniqId !== task.uniqId));
+        this.showDetail.set(false);
+        this.msgService.add({ severity: 'success', summary: 'Task deleted', life: 2000 });
+      },
+    });
   }
 
-  onTaskStatusChanged() {
-    this.loadTasks();
+  // Wizard
+  openWizard() {
+    this.wizardStep.set(1);
+    this.newTitle.set(''); this.newType.set(''); this.newAssignee.set(null);
+    this.newPriority.set('Medium'); this.newDueDate.set(null); this.newDesc.set('');
+    this.showWizard.set(true);
+  }
+
+  wizardNext() { if (this.wizardStep() < 3) this.wizardStep.update(s => s + 1); }
+  wizardBack() { if (this.wizardStep() > 1) this.wizardStep.update(s => s - 1); }
+
+  canNext(): boolean {
+    if (this.wizardStep() === 1) return this.newTitle().trim().length > 0 && this.newType() !== '';
+    if (this.wizardStep() === 2) return this.newAssignee() !== null;
+    return true;
+  }
+
+  submitTask() {
+    const me       = this.me();
+    const assignee = this.newAssignee();
+    if (!me || !assignee) return;
+
+    const req: CreateJobTaskRequest = {
+      taskTitle:       this.newTitle().trim(),
+      taskType:        this.newType() as TaskType,
+      taskDescription: this.newDesc(),
+      assignorStaffId: me.staffCode,
+      assigneeStaffId: assignee.staffCode,
+      priority:        this.newPriority(),
+      dueDate:         this.newDueDate() ? this.newDueDate()!.toISOString().split('T')[0] : null,
+      entryStaff:      me.staffId,
+    };
+
+    this.taskService.create(req).subscribe({
+      next: created => {
+        this.tasks.update(list => [created, ...list]);
+        this.showWizard.set(false);
+        this.msgService.add({ severity: 'success', summary: 'Task created!', life: 2000 });
+      },
+      error: e => { console.error(e); this.msgService.add({ severity: 'error', summary: 'Failed to create task', life: 3000 }); },
+    });
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  prioritySeverity(p: string): 'danger' | 'warn' | 'info' | 'secondary' {
+    if (p === 'Urgent') return 'danger';
+    if (p === 'High')   return 'warn';
+    if (p === 'Medium') return 'info';
+    return 'secondary';
+  }
+
+  statusSeverity(s: string): 'success' | 'warn' | 'info' | 'secondary' | 'danger' {
+    if (s === 'Completed')   return 'success';
+    if (s === 'In Progress') return 'warn';
+    if (s === 'On Hold')     return 'secondary';
+    if (s === 'Cancelled')   return 'danger';
+    return 'info';
+  }
+
+  isOverdue(task: JobTask): boolean {
+    if (!task.dueDate || task.jobStatus === 'Completed' || task.jobStatus === 'Cancelled') return false;
+    const now = new Date(); now.setHours(0,0,0,0);
+    return new Date(task.dueDate) < now;
+  }
+
+  initials(name: string | null | undefined): string {
+    if (!name) return '?';
+    return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
   }
 }

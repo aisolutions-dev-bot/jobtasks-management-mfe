@@ -1,161 +1,336 @@
-<!-- ============== HEADER ============== -->
-<header class="border-b" style="border-color: #D4CCBE; background-color: #F4EFE3;">
-  <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
-    <!-- Brand -->
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-md flex items-center justify-center" style="background: #1A1A1A;">
-        <lucide-icon name="sparkles" [size]="18" style="color: #F4EFE3;"></lucide-icon>
+<p-toast />
+
+<!-- ── STAT CARDS ── -->
+<div class="stats-row">
+  <p-card styleClass="stat-card">
+    <div class="stat-value">{{ stats().active }}</div>
+    <div class="stat-label">ACTIVE</div>
+  </p-card>
+  <p-card styleClass="stat-card">
+    <div class="stat-value">{{ stats().completed }}</div>
+    <div class="stat-label">COMPLETED</div>
+  </p-card>
+  <p-card styleClass="stat-card stat-overdue">
+    <div class="stat-value">{{ stats().overdue }}</div>
+    <div class="stat-label">OVERDUE</div>
+  </p-card>
+  <p-card styleClass="stat-card">
+    <div class="stat-value">{{ stats().total }}</div>
+    <div class="stat-label">TOTAL ASSIGNED</div>
+  </p-card>
+</div>
+
+<!-- ── TOOLBAR ── -->
+<div class="toolbar">
+  <!-- View tabs -->
+  <div class="view-tabs">
+    @for (tab of viewTabs; track tab.value) {
+      <p-button
+        [label]="tab.label"
+        [outlined]="activeView() !== tab.value"
+        severity="secondary"
+        (onClick)="activeView.set($any(tab.value))"
+        size="small"
+      />
+    }
+  </div>
+
+  <!-- Search + actions -->
+  <div class="toolbar-actions">
+    <span class="p-input-icon-left search-wrap">
+      <i class="pi pi-search"></i>
+      <input pInputText type="text" placeholder="Search tasks..."
+             [value]="searchQuery()"
+             (input)="searchQuery.set($any($event.target).value)" />
+    </span>
+    <p-button label="New task" icon="pi pi-plus"
+              (onClick)="openWizard()" />
+  </div>
+</div>
+
+<!-- ── TASK GRID ── -->
+@if (loading()) {
+  <div class="empty-state">
+    <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
+    <p>Loading tasks...</p>
+  </div>
+} @else if (filteredTasks().length === 0) {
+  <div class="empty-state">
+    <i class="pi pi-inbox" style="font-size:3rem;color:var(--p-text-muted-color)"></i>
+    <p>No tasks found.</p>
+  </div>
+} @else {
+  <div class="task-grid">
+    @for (task of filteredTasks(); track task.uniqId) {
+      <p-card styleClass="task-card" (click)="openTask(task)">
+        <!-- Header badges -->
+        <div class="task-card-header">
+          <p-tag [value]="task.taskType" severity="secondary" styleClass="type-tag" />
+          <p-tag [value]="task.priority"
+                 [severity]="prioritySeverity(task.priority)"
+                 styleClass="priority-tag" />
+        </div>
+
+        <!-- Code + Title -->
+        <div class="task-code">{{ task.jobTaskId }}</div>
+        <div class="task-title" [class.line-through]="task.jobStatus === 'Completed'">
+          {{ task.taskTitle }}
+        </div>
+        <div class="task-desc">{{ task.taskDescription || '—' }}</div>
+
+        <!-- Footer -->
+        <div class="task-footer">
+          <div class="assignee-info">
+            <p-avatar
+              [label]="initials(task.assignee?.name)"
+              shape="circle"
+              size="normal"
+              styleClass="avatar-sm"
+            />
+            <span class="assignee-name">{{ task.assignee?.name || 'Unassigned' }}</span>
+          </div>
+          <div class="task-meta-right">
+            <p-tag [value]="task.jobStatus"
+                   [severity]="statusSeverity(task.jobStatus)"
+                   styleClass="status-tag" />
+            @if (isOverdue(task)) {
+              <span class="overdue-label">
+                <i class="pi pi-exclamation-circle"></i> Overdue
+              </span>
+            } @else if (task.dueDate) {
+              <span class="due-label">Due {{ task.dueDate | date:'dd MMM' }}</span>
+            }
+          </div>
+        </div>
+      </p-card>
+    }
+  </div>
+}
+
+<!-- ── TASK DETAIL DIALOG ── -->
+<p-dialog
+  [(visible)]="showDetail"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '600px' }"
+  [header]="selectedTask()?.jobTaskId || 'Task Detail'"
+>
+  @if (selectedTask(); as task) {
+    <div class="detail-section">
+      <h3 class="task-detail-title">{{ task.taskTitle }}</h3>
+      <div class="detail-badges">
+        <p-tag [value]="task.taskType" severity="secondary" />
+        <p-tag [value]="task.priority" [severity]="prioritySeverity(task.priority)" />
+      </div>
+    </div>
+
+    <p-divider />
+
+    <!-- Status -->
+    <div class="detail-section">
+      <div class="detail-label">STATUS</div>
+      <div class="status-buttons">
+        @for (opt of statusOptions; track opt.value) {
+          <p-button
+            [label]="opt.label"
+            [outlined]="task.jobStatus !== opt.value"
+            [severity]="task.jobStatus === opt.value ? 'success' : 'secondary'"
+            size="small"
+            (onClick)="onStatusChange(task, $any(opt.value))"
+          />
+        }
+      </div>
+    </div>
+
+    <p-divider />
+
+    <!-- People -->
+    <div class="detail-people">
+      <div class="detail-person">
+        <div class="detail-label">ASSIGNOR</div>
+        <div class="person-row">
+          <p-avatar [label]="initials(task.assignor?.name)" shape="circle" size="normal" />
+          <div>
+            <div class="person-name">{{ task.assignor?.name }}</div>
+            <div class="person-role">{{ task.assignor?.appointment || task.assignor?.department }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-person">
+        <div class="detail-label">ASSIGNEE</div>
+        <div class="person-row">
+          <p-avatar [label]="initials(task.assignee?.name)" shape="circle" size="normal" />
+          <div>
+            <div class="person-name">{{ task.assignee?.name }}</div>
+            <div class="person-role">{{ task.assignee?.appointment || task.assignee?.department }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p-divider />
+
+    <!-- Dates -->
+    <div class="detail-dates">
+      <div>
+        <div class="detail-label">DUE</div>
+        <div>{{ task.dueDate ? (task.dueDate | date:'dd MMM yyyy') : '—' }}</div>
       </div>
       <div>
-        <div class="flex items-baseline gap-2">
-          <h1 class="font-serif text-2xl leading-none" style="letter-spacing: -0.01em;">Taskwright</h1>
-          <span class="text-xs uppercase tracking-widest text-gray-600">m24</span>
+        <div class="detail-label">CREATED</div>
+        <div>{{ task.entryDate ? (task.entryDate | date:'dd MMM yyyy') : '—' }}</div>
+      </div>
+    </div>
+
+    <p-divider />
+
+    <!-- Description -->
+    <div class="detail-section">
+      <div class="detail-label">DESCRIPTION</div>
+      <div class="detail-desc">{{ task.taskDescription || '—' }}</div>
+    </div>
+
+    <p-divider />
+
+    <!-- Delete -->
+    <p-button label="Delete task" icon="pi pi-trash"
+              severity="danger" [outlined]="true"
+              (onClick)="onDeleteTask()" />
+  }
+</p-dialog>
+
+<!-- ── CREATE WIZARD DIALOG ── -->
+<p-dialog
+  [(visible)]="showWizard"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '560px' }"
+>
+  <ng-template pTemplate="header">
+    <div class="wizard-header">
+      <span class="wizard-step-label">STEP {{ wizardStep() }} OF 3</span>
+      <h3 class="wizard-title">
+        @if (wizardStep() === 1) { What needs doing? }
+        @if (wizardStep() === 2) { Who should handle it? }
+        @if (wizardStep() === 3) { Tell them more. }
+      </h3>
+      <!-- Progress bar -->
+      <div class="wizard-progress">
+        @for (i of [1,2,3]; track i) {
+          <div class="wizard-progress-step" [class.active]="wizardStep() >= i"></div>
+        }
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- Step 1 -->
+  @if (wizardStep() === 1) {
+    <div class="wizard-body">
+      <label class="field-label">Task title</label>
+      <input pInputText type="text" placeholder="Enter task title..."
+             [value]="newTitle()"
+             (input)="newTitle.set($any($event.target).value)"
+             class="w-full mb-4" />
+
+      <label class="field-label">Task type</label>
+      <div class="type-grid">
+        @for (t of taskTypes; track t) {
+          <div class="type-option"
+               [class.selected]="newType() === t"
+               (click)="newType.set(t)">
+            <i class="pi pi-tag"></i>
+            <span>{{ t }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Step 2 -->
+  @if (wizardStep() === 2) {
+    <div class="wizard-body">
+      <label class="field-label">Assign to</label>
+      <div class="staff-list">
+        @for (s of staff(); track s.staffCode) {
+          <div class="staff-item"
+               [class.selected]="newAssignee()?.staffCode === s.staffCode"
+               (click)="newAssignee.set(s)">
+            <p-avatar [label]="initials(s.name)" shape="circle" size="normal" />
+            <div class="staff-item-info">
+              <div class="staff-name">{{ s.name }}</div>
+              <div class="staff-role">{{ s.appointment || s.department }}</div>
+            </div>
+            @if (newAssignee()?.staffCode === s.staffCode) {
+              <i class="pi pi-check" style="color:var(--p-primary-color)"></i>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="wizard-row mt-3">
+        <div class="flex-1">
+          <label class="field-label">Priority</label>
+          <div class="priority-buttons">
+            @for (p of priorities; track p) {
+              <p-button [label]="p" size="small"
+                        [outlined]="newPriority() !== p"
+                        [severity]="newPriority() === p ? 'contrast' : 'secondary'"
+                        (onClick)="newPriority.set(p)" />
+            }
+          </div>
         </div>
-        <div class="text-xs mt-0.5 text-gray-600">Assign work · Track progress · Stay in flow</div>
+        <div class="flex-1">
+          <label class="field-label">Due date</label>
+          <p-datepicker [(ngModel)]="newDueDate"
+                       placeholder="Select date"
+                       dateFormat="dd/mm/yy"
+                       [showIcon]="true"
+                       styleClass="w-full" />
+        </div>
       </div>
     </div>
+  }
 
-    <!-- User Switcher -->
-    <app-user-switcher
-      *ngIf="me()"
-      [me]="me()!"
-      [staff]="staff()"
-      (selectStaff)="onSelectStaff($event)"
-    />
-  </div>
-</header>
+  <!-- Step 3 -->
+  @if (wizardStep() === 3) {
+    <div class="wizard-body">
+      <label class="field-label">Description</label>
+      <textarea pTextarea rows="4"
+                [value]="newDesc()"
+                (input)="newDesc.set($any($event.target).value)"
+                placeholder="Describe the task..."
+                class="w-full"></textarea>
 
-<!-- ============== MAIN CONTENT ============== -->
-<main class="min-h-screen" style="background-color: #FDFAF3;">
-  <div class="max-w-7xl mx-auto px-6 py-8">
-    <!-- ──── SUMMARY STATS ──── -->
-    <div class="grid grid-cols-4 gap-4 mb-8">
-      <app-stat-card
-        label="ACTIVE"
-        [value]="activeCount()"
-        labelColor="#A73838"
-        bgColor="#ECE6DD"
-      />
-      <app-stat-card
-        label="COMPLETED"
-        [value]="completedCount()"
-        labelColor="#3ECF8E"
-        bgColor="#ECE6DD"
-      />
-      <app-stat-card
-        label="OVERDUE"
-        [value]="overdueCount()"
-        labelColor="#D98A3A"
-        bgColor="#ECE6DD"
-      />
-      <app-stat-card
-        label="TOTAL ASSIGNED"
-        [value]="totalCount()"
-        labelColor="#1A1A1A"
-        bgColor="#ECE6DD"
-      />
-    </div>
-
-    <!-- ──── FILTER TABS ──── -->
-    <div class="flex gap-3 mb-6">
-      <button
-        *ngFor="let tab of filterTabs"
-        (click)="onFilterChange(tab.key)"
-        class="px-4 py-2 rounded-full text-sm font-medium transition"
-        [class.active]="filterState().viewMode === tab.key"
-        [ngClass]="{
-          'bg-black text-white': filterState().viewMode === tab.key,
-          'bg-gray-100 text-gray-700 hover:bg-gray-200': filterState().viewMode !== tab.key
-        }"
-      >
-        {{ tab.label }} <span class="text-xs opacity-75">{{ tab.count() }}</span>
-      </button>
-    </div>
-
-    <!-- ──── SEARCH & ACTIONS ──── -->
-    <div class="flex gap-3 mb-6">
-      <!-- Search Input -->
-      <div class="relative flex-1">
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          class="w-full px-4 py-2 rounded-lg border"
-          style="border-color: #D4CCBE; background-color: white;"
-          [(ngModel)]="searchQuery"
-          (ngModelChange)="onSearchChange($event)"
-        />
-        <lucide-icon
-          name="search"
-          [size]="16"
-          class="absolute right-3 top-3 text-gray-400"
-        />
-      </div>
-
-      <!-- Filter Button -->
-      <button
-        class="px-4 py-2 rounded-lg border font-medium transition"
-        style="border-color: #D4CCBE; color: #1A1A1A;"
-      >
-        <lucide-icon name="filter" [size]="16" class="inline mr-2" />
-        Filters
-      </button>
-
-      <!-- New Task Button -->
-      <button
-        (click)="onOpenTaskForm()"
-        class="px-4 py-2 rounded-lg font-medium text-white transition"
-        style="background-color: #1A1A1A;"
-      >
-        <lucide-icon name="plus" [size]="16" class="inline mr-2" />
-        New task
-      </button>
-    </div>
-
-    <!-- ──── TASK LIST ──── -->
-    <div class="grid grid-cols-2 gap-6">
-      <div
-        *ngFor="let task of filteredTasks()"
-        class="cursor-pointer"
-        (click)="onSelectTask(task)"
-      >
-        <app-task-card [task]="task" />
-      </div>
-
-      <!-- Empty State -->
-      <div
-        *ngIf="filteredTasks().length === 0 && !loading()"
-        class="col-span-2 text-center py-12 text-gray-500"
-      >
-        <lucide-icon name="inbox" [size]="48" class="mx-auto mb-4 opacity-50" />
-        <p>No tasks found</p>
-      </div>
-
-      <!-- Loading State -->
-      <div *ngIf="loading()" class="col-span-2 text-center py-12">
-        <lucide-icon name="loader" [size]="24" class="mx-auto animate-spin" />
+      <p-divider />
+      <div class="review-box">
+        <div class="review-row"><span class="review-label">Title</span><span>{{ newTitle() }}</span></div>
+        <div class="review-row"><span class="review-label">Type</span><span>{{ newType() }}</span></div>
+        <div class="review-row"><span class="review-label">Assignee</span><span>{{ newAssignee()?.name }}</span></div>
+        <div class="review-row"><span class="review-label">Priority</span><span>{{ newPriority() }}</span></div>
+        <div class="review-row"><span class="review-label">Due</span>
+          <span>{{ newDueDate() ? (newDueDate() | date:'dd MMM yyyy') : '—' }}</span></div>
       </div>
     </div>
-  </div>
-</main>
+  }
 
-<!-- ============== MODALS & DRAWERS ============== -->
-
-<!-- Task Form Modal -->
-<app-task-form-modal
-  *ngIf="showTaskForm()"
-  [staff]="staff()"
-  [me]="me()!"
-  (create)="onCreateTask($event)"
-  (cancel)="onCloseTaskForm()"
-/>
-
-<!-- Task Detail Drawer -->
-<app-task-detail-drawer
-  *ngIf="showTaskDetail() && selectedTask()"
-  [task]="selectedTask()!"
-  [staff]="staff()"
-  [me]="me()!"
-  (close)="onCloseTaskDetail()"
-  (delete)="onDeleteTask(selectedTask()!.uniqId)"
-  (statusChanged)="onTaskStatusChanged()"
-/>
+  <ng-template pTemplate="footer">
+    <div class="wizard-footer">
+      @if (wizardStep() === 1) {
+        <p-button label="Cancel" [outlined]="true" severity="secondary"
+                  (onClick)="showWizard.set(false)" />
+      } @else {
+        <p-button label="Back" icon="pi pi-arrow-left" [outlined]="true" severity="secondary"
+                  (onClick)="wizardBack()" />
+      }
+      @if (wizardStep() < 3) {
+        <p-button label="Next" icon="pi pi-arrow-right" iconPos="right"
+                  [disabled]="!canNext()"
+                  (onClick)="wizardNext()" />
+      } @else {
+        <p-button label="Create & assign" icon="pi pi-check"
+                  [disabled]="!canNext()"
+                  (onClick)="submitTask()" />
+      }
+    </div>
+  </ng-template>
+</p-dialog>

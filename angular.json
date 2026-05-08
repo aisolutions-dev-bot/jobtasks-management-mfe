@@ -14,10 +14,10 @@
           "builder": "ngx-build-plus:browser",
           "options": {
             "tsConfig": "tsconfig.app.json",
-            "inlineStyleLanguage": "css",
+            "inlineStyleLanguage": "scss",
             "assets": [],
             "styles": [
-              "src/styles.css"
+              "src/styles.scss"
             ],
             "main": "src/main.ts",
             "outputPath": "dist/jobtask-frontend",

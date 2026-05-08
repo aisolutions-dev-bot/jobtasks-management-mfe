@@ -1,0 +1,6 @@
+/* PrimeNG theme — matches our system standard */
+@import "primeicons/primeicons.css";
+
+/* Base resets */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--p-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif); }
