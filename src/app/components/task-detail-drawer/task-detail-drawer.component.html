@@ -49,7 +49,7 @@
             'bg-gray-100 text-gray-600 hover:bg-gray-200': selectedStatus !== status
           }"
         >
-          {{ status === 'PENDING' ? 'Pending' : status === 'IN_PROGRESS' ? 'In Progress' : status === 'ON_HOLD' ? 'On Hold' : 'Completed' }}
+          {{ status === 'Pending' ? 'Pending' : status === 'In Progress' ? 'In Progress' : status === 'On Hold' ? 'On Hold' : 'Completed' }}
         </button>
       </div>
     </div>
@@ -62,8 +62,7 @@
         <div class="flex items-center gap-3">
           <app-avatar
             *ngIf="task.assignor"
-            [name]="task.assignor.name"
-            [avatarColor]="task.assignor.avatarColor"
+            [staff]="task.assignor"
             [size]="32"
           />
           <div class="text-sm">
@@ -79,8 +78,7 @@
         <div class="flex items-center gap-3">
           <app-avatar
             *ngIf="task.assignee"
-            [name]="task.assignee.name"
-            [avatarColor]="task.assignee.avatarColor"
+            [staff]="task.assignee"
             [size]="32"
           />
           <div class="text-sm">

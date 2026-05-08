@@ -46,7 +46,7 @@ export class AppComponent implements OnInit {
   showTaskForm = signal(false);
   showTaskDetail = signal(false);
   searchQuery = signal('');
-  filterState = signal<FilterState>({ groupAuthority: 'ALL', staffCode: '' });
+  filterState = signal<FilterState>({ viewMode: 'ALL', status: 'all', type: 'all', priority: 'all' });
   loading = signal(false);
 
   // ──── Computed Values ────
@@ -66,9 +66,9 @@ export class AppComponent implements OnInit {
 
     // Filter by group authority
     const filter = this.filterState();
-    if (filter.groupAuthority === 'ASSIGNED_BY_ME') {
+    if (filter.viewMode === 'ASSIGNED_BY_ME') {
       filtered = filtered.filter((t) => t.assignor?.staffCode === this.me()?.staffCode);
-    } else if (filter.groupAuthority === 'ASSIGNED_TO_ME') {
+    } else if (filter.viewMode === 'ASSIGNED_TO_ME') {
       filtered = filtered.filter((t) => t.assignee?.staffCode === this.me()?.staffCode);
     }
 
@@ -77,11 +77,11 @@ export class AppComponent implements OnInit {
 
   // Statistics
   activeCount = computed(() => {
-    return this.tasks().filter((t) => t.jobStatus === 'IN_PROGRESS' || t.jobStatus === 'PENDING').length;
+    return this.tasks().filter((t) => t.jobStatus === 'In Progress' || t.jobStatus === 'Pending').length;
   });
 
   completedCount = computed(() => {
-    return this.tasks().filter((t) => t.jobStatus === 'COMPLETED').length;
+    return this.tasks().filter((t) => t.jobStatus === 'Completed').length;
   });
 
   overdueCount = computed(() => {
@@ -90,7 +90,7 @@ export class AppComponent implements OnInit {
       (t) =>
         t.dueDate &&
         new Date(t.dueDate) < now &&
-        (t.jobStatus === 'PENDING' || t.jobStatus === 'IN_PROGRESS')
+        (t.jobStatus === 'Pending' || t.jobStatus === 'In Progress')
     ).length;
   });
 
@@ -120,7 +120,7 @@ export class AppComponent implements OnInit {
   }
 
   private loadStaff() {
-    this.staffService.getStaff().subscribe({
+    this.staffService.list().subscribe({
       next: (staffList) => {
         this.staff.set(staffList);
         // Set first staff as me
@@ -133,7 +133,7 @@ export class AppComponent implements OnInit {
 
   private loadTasks() {
     this.loading.set(true);
-    this.taskService.getTasks().subscribe({
+    this.taskService.list().subscribe({
       next: (taskList) => {
         this.tasks.set(taskList);
         this.loading.set(false);
@@ -148,7 +148,7 @@ export class AppComponent implements OnInit {
 
   onFilterChange(key: string) {
     const state = this.filterState();
-    this.filterState.set({ ...state, groupAuthority: key as any });
+    this.filterState.set({ ...state, viewMode: key as any });
   }
 
   onSearchChange(query: string) {
@@ -164,7 +164,7 @@ export class AppComponent implements OnInit {
   }
 
   onCreateTask(data: CreateJobTaskRequest) {
-    this.taskService.createTask(data).subscribe({
+    this.taskService.create(data).subscribe({
       next: () => {
         this.showTaskForm.set(false);
         this.loadTasks();
@@ -182,9 +182,9 @@ export class AppComponent implements OnInit {
     this.selectedTask.set(null);
   }
 
-  onDeleteTask(taskId: string) {
+  onDeleteTask(taskId: number) {
     if (confirm('Are you sure you want to delete this task?')) {
-      this.taskService.deleteTask(taskId).subscribe({
+      this.taskService.delete(taskId).subscribe({
         next: () => {
           this.showTaskDetail.set(false);
           this.selectedTask.set(null);

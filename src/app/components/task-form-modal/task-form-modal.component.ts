@@ -66,9 +66,9 @@ export class TaskFormModalComponent {
   onCreate() {
     const request: CreateJobTaskRequest = {
       taskTitle: this.taskTitle(),
-      taskType: this.taskType(),
+      taskType: this.taskType() as import("../../models/task.model").TaskType,
       taskDescription: this.taskDescription(),
-      priority: this.priority(),
+      priority: this.priority() as import("../../models/task.model").Priority,
       assigneeStaffCode: this.assignee()?.staffCode || '',
       dueDate: this.dueDate(),
     };

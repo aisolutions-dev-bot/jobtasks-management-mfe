@@ -23,7 +23,7 @@ export class TaskDetailDrawerComponent {
   @Output() statusChanged = new EventEmitter<void>();
 
   private taskService = inject(TaskService);
-  selectedStatus: Status = 'PENDING';
+  selectedStatus: Status = 'Pending';
 
   ngOnInit() {
     this.selectedStatus = this.task.jobStatus as Status;
@@ -31,10 +31,7 @@ export class TaskDetailDrawerComponent {
 
   onStatusChange(status: Status) {
     this.selectedStatus = status;
-    this.taskService.updateStatus(this.task.uniqId, {
-      jobStatus: status,
-      lastEditStaff: this.me.staffCode,
-    }).subscribe({
+    this.taskService.updateStatus(this.task.uniqId, status, String(this.me.staffCode)).subscribe({
       next: () => {
         this.statusChanged.emit();
       },
@@ -43,10 +40,10 @@ export class TaskDetailDrawerComponent {
 
   getStatusColor(status: Status): string {
     const colors: Record<string, string> = {
-      'COMPLETED': '#3ECF8E',
-      'IN_PROGRESS': '#FBBF24',
-      'PENDING': '#D1D5DB',
-      'ON_HOLD': '#8B5CF6',
+      'Completed': '#3ECF8E',
+      'In Progress': '#FBBF24',
+      'Pending': '#D1D5DB',
+      'On Hold': '#8B5CF6',
     };
     return colors[status] || '#D1D5DB';
   }
@@ -92,5 +89,5 @@ export class TaskDetailDrawerComponent {
     }
   }
 
-  statuses: Status[] = ['PENDING', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED'];
+  statuses: Status[] = ['Pending', 'In Progress', 'On Hold', 'Completed'];
 }

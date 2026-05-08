@@ -39,8 +39,7 @@
       <span class="text-xs text-gray-600">To</span>
       <app-avatar
         *ngIf="task.assignee"
-        [name]="task.assignee.name"
-        [avatarColor]="task.assignee.avatarColor"
+        [staff]="task.assignee"
         [size]="24"
       />
       <span class="text-xs font-medium">{{ task.assignee?.name || 'Unassigned' }}</span>

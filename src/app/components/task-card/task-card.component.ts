@@ -38,26 +38,26 @@ export class TaskCardComponent {
 
   getStatusColor(status: string): string {
     const colors: Record<string, string> = {
-      'COMPLETED': '#3ECF8E',
-      'IN_PROGRESS': '#FBBF24',
-      'PENDING': '#D1D5DB',
-      'ON_HOLD': '#8B5CF6',
+      'Completed': '#3ECF8E',
+      'In Progress': '#FBBF24',
+      'Pending': '#D1D5DB',
+      'On Hold': '#8B5CF6',
     };
     return colors[status] || '#D1D5DB';
   }
 
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      'COMPLETED': 'Completed',
-      'IN_PROGRESS': 'In Progress',
-      'PENDING': 'Pending',
-      'ON_HOLD': 'On Hold',
+      'Completed': 'Completed',
+      'In Progress': 'In Progress',
+      'Pending': 'Pending',
+      'On Hold': 'On Hold',
     };
     return labels[status] || status;
   }
 
   isOverdue(): boolean {
-    if (!this.task.dueDate || this.task.jobStatus === 'COMPLETED') return false;
+    if (!this.task.dueDate || this.task.jobStatus === 'Completed') return false;
     return new Date(this.task.dueDate) < new Date();
   }
 
@@ -68,6 +68,6 @@ export class TaskCardComponent {
   }
 
   isCompleted(): boolean {
-    return this.task.jobStatus === 'COMPLETED';
+    return this.task.jobStatus === 'Completed';
   }
 }

@@ -80,6 +80,7 @@ export interface UpdateStatusRequest {
 }
 
 export interface FilterState {
+  viewMode: 'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME';
   status:   Status | 'all';
   type:     TaskType | 'all';
   priority: Priority | 'all';

@@ -62,10 +62,10 @@
         *ngFor="let tab of filterTabs"
         (click)="onFilterChange(tab.key)"
         class="px-4 py-2 rounded-full text-sm font-medium transition"
-        [class.active]="filterState().groupAuthority === tab.key"
+        [class.active]="filterState().viewMode === tab.key"
         [ngClass]="{
-          'bg-black text-white': filterState().groupAuthority === tab.key,
-          'bg-gray-100 text-gray-700 hover:bg-gray-200': filterState().groupAuthority !== tab.key
+          'bg-black text-white': filterState().viewMode === tab.key,
+          'bg-gray-100 text-gray-700 hover:bg-gray-200': filterState().viewMode !== tab.key
         }"
       >
         {{ tab.label }} <span class="text-xs opacity-75">{{ tab.count() }}</span>
