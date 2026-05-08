@@ -4,7 +4,9 @@ import { provideAnimations }                      from '@angular/platform-browse
 import { LucideAngularModule, Plus, Calendar, Search, X, Check, Code2, LifeBuoy, HelpCircle,
          MessageSquare, FileText, Bug, ChevronDown, Clock, ArrowRight, Trash2,
          CheckCircle2, Circle, PauseCircle, AlertTriangle, Inbox, Send,
-         SlidersHorizontal, Sparkles, TrendingUp, ChevronRight }            from 'lucide-angular';
+         SlidersHorizontal, Sparkles, TrendingUp, ChevronRight,
+        Filter, Loader,
+         Filter, Loader }                                                   from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -16,6 +18,7 @@ export const appConfig: ApplicationConfig = {
         MessageSquare, FileText, Bug, ChevronDown, Clock, ArrowRight, Trash2,
         CheckCircle2, Circle, PauseCircle, AlertTriangle, Inbox, Send,
         SlidersHorizontal, Sparkles, TrendingUp, ChevronRight,
+        Filter, Loader,
       }),
     ),
   ],
