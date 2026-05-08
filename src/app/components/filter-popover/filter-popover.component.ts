@@ -104,6 +104,6 @@ export class FilterPopoverComponent {
   setPriority(v: Priority | 'all') { this.filterChange.emit({ ...this.filter, priority: v }); }
 
   clearAll() {
-    this.filterChange.emit({ status: 'all', type: 'all', priority: 'all' });
+    this.filterChange.emit({ viewMode: 'ALL', status: 'all', type: 'all', priority: 'all' });
   }
 }
