@@ -1,3 +1,17 @@
+<!-- RBAC loading -->
+@if (rbacLoading()) {
+  <div class="empty-state">
+    <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
+    <p>Checking access...</p>
+  </div>
+} @else if (accessDenied()) {
+  <div class="empty-state">
+    <i class="pi pi-lock" style="font-size:3rem;color:var(--p-text-muted-color)"></i>
+    <p>You do not have access to the Job Tasks module.</p>
+    <p style="font-size:0.8rem;color:var(--p-text-muted-color)">Contact your administrator to request access (mod24 / a2401).</p>
+  </div>
+} @else {
+
 <p-toast />
 
 <!-- ── STAT CARDS ── -->
@@ -340,3 +354,5 @@
     </div>
   </ng-template>
 </p-dialog>
+
+}

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -7,17 +7,16 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { BadgeModule } from 'primeng/badge';
 import { DialogModule } from 'primeng/dialog';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { DividerModule } from 'primeng/divider';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
-import { ListboxModule } from 'primeng/listbox';
+import { SkeletonModule } from 'primeng/skeleton';
 
 import { JobTask, Staff, Status, TaskType, Priority, CreateJobTaskRequest } from './models/task.model';
+import { IAuthService } from './models/auth';
 import { TaskService } from './services/task.service';
 import { StaffService } from './services/staff.service';
 
@@ -27,8 +26,8 @@ import { StaffService } from './services/staff.service';
   imports: [
     CommonModule, FormsModule,
     CardModule, ButtonModule, InputTextModule, TagModule, BadgeModule,
-    DialogModule, SelectButtonModule, ToastModule, AvatarModule,
-    DividerModule, DatePickerModule, TextareaModule, SelectModule, ListboxModule,
+    DialogModule, ToastModule, AvatarModule,
+    DividerModule, DatePickerModule, TextareaModule, SkeletonModule,
   ],
   providers: [MessageService],
   templateUrl: './app.component.html',
@@ -39,29 +38,36 @@ export class AppComponent implements OnInit {
   private staffService = inject(StaffService);
   private msgService   = inject(MessageService);
 
+  // RBAC access control
+  private readonly MODULE_ID      = 'mod24';
+  private readonly ACCESS_BOARD   = 'a2401';      // can see Task Board tab
+  private readonly ACCESS_VIEW_DEPT = 'a2401.01'; // view all dept records
+  private readonly ACCESS_VIEW_ALL  = 'a2401.02'; // view all records
+
   // ── State ──────────────────────────────────────────────────────────────────
-  staff       = signal<Staff[]>([]);
-  tasks       = signal<JobTask[]>([]);
-  me          = signal<Staff | null>(null);
-  activeView  = signal<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
-  searchQuery = signal('');
-  loading     = signal(false);
+  staff        = signal<Staff[]>([]);
+  tasks        = signal<JobTask[]>([]);
+  me           = signal<Staff | null>(null);
+  activeView   = signal<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
+  searchQuery  = signal('');
+  loading      = signal(false);
+  accessDenied = signal(false);   // true when a2401 = 0
+  rbacLoading  = signal(true);    // true while checking RBAC
 
   // Detail dialog
-  showDetail    = signal(false);
-  selectedTask  = signal<JobTask | null>(null);
+  showDetail   = signal(false);
+  selectedTask = signal<JobTask | null>(null);
 
   // Create wizard
-  showWizard  = signal(false);
-  wizardStep  = signal(1);
-  newTitle    = signal('');
-  newType     = signal<TaskType | ''>('');
-  newAssignee = signal<Staff | null>(null);
-  newPriority = signal<Priority>('Medium');
+  showWizard   = signal(false);
+  wizardStep   = signal(1);
+  newTitle     = signal('');
+  newType      = signal<TaskType | ''>('');
+  newAssignee  = signal<Staff | null>(null);
+  newPriority  = signal<Priority>('Medium');
   newDueDate: Date | null = null;
-  newDesc     = signal('');
+  newDesc      = signal('');
 
-  // Status options
   statusOptions = [
     { label: 'Pending',     value: 'Pending' },
     { label: 'In Progress', value: 'In Progress' },
@@ -82,6 +88,10 @@ export class AppComponent implements OnInit {
     { label: 'Assigned to me', value: 'ASSIGNED_TO_ME' },
   ];
 
+  constructor(
+    @Inject('AUTH_SERVICE') private authService: IAuthService,
+  ) {}
+
   // ── Computed ───────────────────────────────────────────────────────────────
   filteredTasks = computed(() => {
     let list = this.tasks();
@@ -90,9 +100,9 @@ export class AppComponent implements OnInit {
     const v  = this.activeView();
 
     if (v === 'ASSIGNED_BY_ME' && me)
-      list = list.filter(t => t.assignor?.staffCode === me.staffCode);
+      list = list.filter(t => t.assignor?.staffId === me.staffId);
     if (v === 'ASSIGNED_TO_ME' && me)
-      list = list.filter(t => t.assignee?.staffCode === me.staffCode);
+      list = list.filter(t => t.assignee?.staffId === me.staffId);
     if (q) list = list.filter(t =>
       t.taskTitle.toLowerCase().includes(q) ||
       t.jobTaskId?.toLowerCase().includes(q) ||
@@ -114,32 +124,73 @@ export class AppComponent implements OnInit {
   });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
-  ngOnInit() {
-    this.loadStaff();
+  async ngOnInit() {
+    try {
+      // Fetch user role + module access
+      await this.authService.fetchUserRole();
+      await this.authService.fetchGroupAuthorityAccesses(this.MODULE_ID);
+    } catch (e) {
+      console.warn('[JobTasks] RBAC fetch failed — defaulting to own records only', e);
+    }
+
+    // Check a2401 — can the user see the Task Board at all?
+    const canSeeBoard = this.authService.hasAccess(this.ACCESS_BOARD);
+    if (!canSeeBoard) {
+      this.accessDenied.set(true);
+      this.rbacLoading.set(false);
+      return;
+    }
+
+    this.rbacLoading.set(false);
+    await this.loadStaff();
     this.loadTasks();
   }
 
-  loadStaff() {
-    this.staffService.list().subscribe({
-      next: list => {
-        this.staff.set(list);
-        // Identify logged-in user from JWT stored in localStorage by the shell
-        const loggedInStaffId = this.getLoggedInStaffId();
-        const currentUser = loggedInStaffId
-          ? list.find(s => s.staffId === loggedInStaffId) ?? list[0]
-          : list[0];
-        this.me.set(currentUser ?? null);
-      },
-      error: e => console.error('loadStaff error', e),
+  // ── RBAC helpers ──────────────────────────────────────────────────────────
+
+  /** Returns groupAuthority of logged-in user for backend RBAC call */
+  private getGroupAuthority(): string | undefined {
+    return this.authService.userRole()?.authorities?.[0] ?? undefined;
+  }
+
+  // ── Data loading ──────────────────────────────────────────────────────────
+
+  loadStaff(): Promise<void> {
+    return new Promise(resolve => {
+      this.staffService.list().subscribe({
+        next: list => {
+          this.staff.set(list);
+          const loggedInStaffId = this.getLoggedInStaffId();
+          const currentUser = loggedInStaffId
+            ? list.find(s => s.staffId === loggedInStaffId) ?? list[0]
+            : list[0];
+          this.me.set(currentUser ?? null);
+          resolve();
+        },
+        error: e => { console.error('loadStaff error', e); resolve(); },
+      });
+    });
+  }
+
+  private loadTasks() {
+    this.loading.set(true);
+    const staffCode      = this.me()?.staffId;
+    const groupAuthority = this.getGroupAuthority();
+    this.taskService.list(groupAuthority, staffCode).subscribe({
+      next:  list  => { this.tasks.set(list); this.loading.set(false); },
+      error: e     => { console.error('loadTasks error', e); this.loading.set(false); },
     });
   }
 
   /** Read staffId from shell JWT token in localStorage */
   private getLoggedInStaffId(): string | null {
     try {
+      // First try from authService (most reliable)
+      const staffId = this.authService.userRole()?.staffId;
+      if (staffId) return staffId;
+      // Fallback: decode JWT from localStorage
       const token = localStorage.getItem('access_token');
       if (!token) return null;
-      // JWT payload is the second segment, base64-encoded
       const payload = token.split('.')[1];
       if (!payload) return null;
       const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
@@ -149,36 +200,27 @@ export class AppComponent implements OnInit {
     }
   }
 
-  private loadTasks() {
-    this.loading.set(true);
-    const staffCode = this.me()?.staffId;
-    this.taskService.list(undefined, staffCode).subscribe({
-      next:  list  => { this.tasks.set(list); this.loading.set(false); },
-      error: e     => { console.error('loadTasks error', e); this.loading.set(false); },
-    });
-  }
+  // ── Interactions ──────────────────────────────────────────────────────────
 
-  // ── Interactions ───────────────────────────────────────────────────────────
   openTask(task: JobTask) {
     this.selectedTask.set(task);
     this.showDetail.set(true);
   }
 
   onStatusChange(task: JobTask, status: Status) {
-    this.taskService.updateStatus(task.uniqId, status, String(this.me()?.staffCode ?? '')).subscribe({
+    this.taskService.updateStatus(task.uniqId, status, this.me()?.staffId ?? '').subscribe({
       next: updated => {
         this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
         this.selectedTask.set(updated);
         this.msgService.add({ severity: 'success', summary: 'Status updated', life: 2000 });
       },
-      error: e => { console.error(e); this.msgService.add({ severity: 'error', summary: 'Failed to update status', life: 3000 }); },
+      error: () => this.msgService.add({ severity: 'error', summary: 'Failed to update status', life: 3000 }),
     });
   }
 
   onDeleteTask() {
     const task = this.selectedTask();
-    if (!task) return;
-    if (!confirm('Delete this task?')) return;
+    if (!task || !confirm('Delete this task?')) return;
     this.taskService.delete(task.uniqId).subscribe({
       next: () => {
         this.tasks.update(list => list.filter(t => t.uniqId !== task.uniqId));
@@ -188,12 +230,12 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // Wizard
+  // ── Wizard ────────────────────────────────────────────────────────────────
+
   openWizard() {
     this.wizardStep.set(1);
     this.newTitle.set(''); this.newType.set(''); this.newAssignee.set(null);
     this.newPriority.set('Medium'); this.newDueDate = null; this.newDesc.set('');
-    // Reload staff if empty (e.g. initial CORS-blocked load)
     if (this.staff().length === 0) this.loadStaff();
     this.showWizard.set(true);
   }
@@ -229,11 +271,12 @@ export class AppComponent implements OnInit {
         this.showWizard.set(false);
         this.msgService.add({ severity: 'success', summary: 'Task created!', life: 2000 });
       },
-      error: e => { console.error(e); this.msgService.add({ severity: 'error', summary: 'Failed to create task', life: 3000 }); },
+      error: () => this.msgService.add({ severity: 'error', summary: 'Failed to create task', life: 3000 }),
     });
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
   prioritySeverity(p: string): 'danger' | 'warn' | 'info' | 'secondary' {
     if (p === 'Urgent') return 'danger';
     if (p === 'High')   return 'warn';
