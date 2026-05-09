@@ -1,0 +1,183 @@
+.progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.progress-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+
+  &.active {
+    background: #3b82f6;
+    color: white;
+  }
+
+  &.completed {
+    background: #10b981;
+    color: white;
+  }
+}
+
+.progress-line {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 0 0.5rem;
+  transition: all 0.3s ease;
+
+  &.active {
+    background: #3b82f6;
+  }
+}
+
+.form-section {
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #374151;
+  }
+
+  :deep {
+    input[pInputText],
+    textarea[pInputTextarea],
+    .p-select,
+    .p-datepicker {
+      width: 100%;
+    }
+  }
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.type-button {
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #d1d5db;
+  }
+
+  &.selected {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+}
+
+.assignee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.assignee-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+
+  &:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+  }
+
+  &.selected {
+    background: #eff6ff;
+    border-color: #3b82f6;
+  }
+
+  .assignee-info {
+    flex: 1;
+
+    .name {
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .role {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+  }
+
+  i {
+    color: #10b981;
+  }
+}
+
+.review-box {
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+
+  .review-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+  }
+
+  .review-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+
+    .label {
+      color: #6b7280;
+    }
+
+    .value {
+      font-weight: 600;
+      color: #1f2937;
+    }
+  }
+}
+
+textarea {
+  font-family: inherit;
+  resize: none;
+}

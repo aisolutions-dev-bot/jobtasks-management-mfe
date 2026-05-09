@@ -1,0 +1,95 @@
+<p-dialog
+  [(visible)]="true"
+  [modal]="true"
+  [header]="task.taskTitle"
+  [style]="{ width: '50vw' }"
+  [maximizable]="true"
+  (onHide)="onClose()"
+>
+  <!-- Header Info -->
+  <div class="detail-header">
+    <p-tag [value]="task.taskType" [severity]="getTypeSeverity(task.taskType)" />
+    <p-badge [value]="task.priority" [severity]="getPrioritySeverity(task.priority)" />
+    <span class="task-id">{{ task.jobTaskId }}</span>
+  </div>
+
+  <!-- Status Selection -->
+  <div class="section">
+    <label class="section-title">Status</label>
+    <div class="status-buttons">
+      <p-button
+        *ngFor="let status of statuses"
+        [label]="status"
+        [filled]="selectedStatus === status"
+        [severity]="selectedStatus === status ? 'primary' : 'secondary'"
+        (click)="onStatusChange(status as any)"
+        size="small"
+      />
+    </div>
+  </div>
+
+  <!-- Assignor & Assignee -->
+  <div class="section">
+    <div class="grid-2">
+      <!-- Assignor -->
+      <div class="card-info">
+        <label class="section-title">Assigned By</label>
+        <div class="staff-info" *ngIf="task.assignor">
+          <p-avatar
+            [label]="(task.assignor.name || 'U').substring(0, 1)"
+            shape="circle"
+            size="small"
+            [style]="{ 'background-color': task.assignor.avatarColor, color: '#fff' }"
+          />
+          <div>
+            <div class="staff-name">{{ task.assignor.name }}</div>
+            <div class="staff-title">{{ task.assignor.appointment }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignee -->
+      <div class="card-info">
+        <label class="section-title">Assigned To</label>
+        <div class="staff-info" *ngIf="task.assignee">
+          <p-avatar
+            [label]="(task.assignee.name || 'U').substring(0, 1)"
+            shape="circle"
+            size="small"
+            [style]="{ 'background-color': task.assignee.avatarColor, color: '#fff' }"
+          />
+          <div>
+            <div class="staff-name">{{ task.assignee.name }}</div>
+            <div class="staff-title">{{ task.assignee.appointment }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dates -->
+  <div class="section">
+    <div class="grid-2">
+      <div>
+        <label class="section-title">Due Date</label>
+        <div class="date-value">{{ formatDate(task.dueDate) }}</div>
+      </div>
+      <div>
+        <label class="section-title">Created</label>
+        <div class="date-value">{{ formatDate(task.entryDate) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="section">
+    <label class="section-title">Description</label>
+    <textarea pInputTextarea [value]="task.taskDescription" readonly rows="6"></textarea>
+  </div>
+
+  <!-- Footer Buttons -->
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" icon="pi pi-times" (click)="onClose()" severity="secondary" />
+    <p-button label="Delete" icon="pi pi-trash" (click)="onDelete()" severity="danger" />
+  </ng-template>
+</p-dialog>

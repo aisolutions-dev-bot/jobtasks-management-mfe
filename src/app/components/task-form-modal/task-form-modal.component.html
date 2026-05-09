@@ -1,0 +1,154 @@
+<p-dialog
+  [(visible)]="true"
+  [modal]="true"
+  header="New Task"
+  [style]="{ width: '40vw' }"
+  (onHide)="onCancel()"
+>
+  <!-- Progress Bar -->
+  <div class="progress-bar">
+    <div class="progress-step" [ngClass]="{ active: currentStep() >= 1, completed: currentStep() > 1 }">1</div>
+    <div class="progress-line" [ngClass]="{ active: currentStep() > 1 }"></div>
+    <div class="progress-step" [ngClass]="{ active: currentStep() >= 2, completed: currentStep() > 2 }">2</div>
+    <div class="progress-line" [ngClass]="{ active: currentStep() > 2 }"></div>
+    <div class="progress-step" [ngClass]="{ active: currentStep() >= 3, completed: currentStep() > 3 }">3</div>
+  </div>
+
+  <!-- Step 1: Title & Type -->
+  <div *ngIf="currentStep() === 1" class="form-section">
+    <h3>What needs doing?</h3>
+
+    <!-- Title -->
+    <div class="form-group">
+      <label>Task Title</label>
+      <input pInputText [(ngModel)]="taskTitle" placeholder="e.g., Fix login button" />
+    </div>
+
+    <!-- Type Selection -->
+    <div class="form-group">
+      <label>Task Type</label>
+      <div class="type-grid">
+        <button
+          *ngFor="let type of taskTypes"
+          (click)="onSelectType(type)"
+          [ngClass]="{ selected: taskType() === type }"
+          class="type-button"
+        >
+          {{ type }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Assignee & Priority & Due Date -->
+  <div *ngIf="currentStep() === 2" class="form-section">
+    <h3>Who should handle it?</h3>
+
+    <!-- Assignee -->
+    <div class="form-group">
+      <label>Assign To</label>
+      <div class="assignee-list">
+        <button
+          *ngFor="let s of staff"
+          (click)="onSelectStaff(s)"
+          [ngClass]="{ selected: assignee() === s }"
+          class="assignee-button"
+        >
+          <p-avatar
+            [label]="getStaffInitials(s.name)"
+            shape="circle"
+            size="small"
+            [style]="{ 'background-color': s.avatarColor, color: '#fff' }"
+          />
+          <div class="assignee-info">
+            <div class="name">{{ s.name }}</div>
+            <div class="role">{{ s.appointment }} · {{ s.department }}</div>
+          </div>
+          <i *ngIf="assignee() === s" class="pi pi-check"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Priority -->
+    <div class="form-group">
+      <label>Priority</label>
+      <p-select [(ngModel)]="priority" [options]="priorities" optionLabel="label" optionValue="value" />
+    </div>
+
+    <!-- Due Date -->
+    <div class="form-group">
+      <label>Due Date</label>
+      <p-datepicker [(ngModel)]="dueDate" dateFormat="dd/mm/yy" />
+    </div>
+  </div>
+
+  <!-- Step 3: Description & Review -->
+  <div *ngIf="currentStep() === 3" class="form-section">
+    <h3>Tell them more</h3>
+
+    <!-- Description -->
+    <div class="form-group">
+      <label>Description</label>
+      <textarea pInputTextarea [(ngModel)]="taskDescription" rows="6" placeholder="Add details..."></textarea>
+    </div>
+
+    <!-- Review -->
+    <div class="review-box">
+      <div class="review-title">Review</div>
+      <div class="review-item">
+        <span class="label">Title:</span>
+        <span class="value">{{ taskTitle() }}</span>
+      </div>
+      <div class="review-item">
+        <span class="label">Type:</span>
+        <span class="value">{{ taskType() }}</span>
+      </div>
+      <div class="review-item">
+        <span class="label">Assignee:</span>
+        <span class="value">{{ assignee()?.name }}</span>
+      </div>
+      <div class="review-item">
+        <span class="label">Priority:</span>
+        <span class="value">{{ priority() }}</span>
+      </div>
+      <div class="review-item">
+        <span class="label">Due:</span>
+        <span class="value">{{ dueDate() | date: 'shortDate' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Buttons -->
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" icon="pi pi-times" (click)="onCancel()" severity="secondary" />
+
+    <p-button
+      *ngIf="currentStep() > 1"
+      label="Back"
+      icon="pi pi-arrow-left"
+      (click)="onBack()"
+      severity="secondary"
+    />
+
+    <p-button
+      *ngIf="currentStep() < 3"
+      label="Next"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      (click)="onNext()"
+      [disabled]="
+        (currentStep() === 1 && !isStep1Valid) || (currentStep() === 2 && !isStep2Valid)
+      "
+      severity="primary"
+    />
+
+    <p-button
+      *ngIf="currentStep() === 3"
+      label="Create & Assign"
+      icon="pi pi-check"
+      (click)="onCreate()"
+      [disabled]="!isStep3Valid"
+      severity="success"
+    />
+  </ng-template>
+</p-dialog>
