@@ -1,3 +1,17 @@
+<!-- RBAC loading -->
+@if (rbacLoading()) {
+  <div class="empty-state">
+    <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
+    <p>Checking access...</p>
+  </div>
+} @else if (accessDenied()) {
+  <div class="empty-state">
+    <i class="pi pi-lock" style="font-size:3rem;color:var(--p-text-muted-color)"></i>
+    <p>You do not have access to the Job Tasks module.</p>
+    <p style="font-size:0.8rem;color:var(--p-text-muted-color)">Contact your administrator (mod24 / a2401).</p>
+  </div>
+} @else {
+
 <!-- ============== HEADER ============== -->
 <header class="header-section">
   <div class="header-content">
@@ -5,46 +19,51 @@
       <h1>Task Management</h1>
       <p>Manage and track job tasks efficiently</p>
     </div>
-    <app-user-switcher
-      *ngIf="me()"
-      [me]="me()!"
-      [staff]="staff()"
-      (selectStaff)="onSelectStaff($event)"
-    />
+    @if (me()) {
+      <app-user-switcher
+        [me]="me()!"
+        [staff]="staff()"
+        (selectStaff)="onSelectStaff($event)"
+      />
+    }
   </div>
 </header>
 
 <!-- ============== MAIN CONTENT ============== -->
 <main class="main-section">
   <div class="container-wrapper">
+
     <!-- ──── SUMMARY STATS ──── -->
     <div class="stats-grid">
-      <app-stat-card label="ACTIVE" [value]="activeCount()" severity="info" />
-      <app-stat-card label="COMPLETED" [value]="completedCount()" severity="success" />
-      <app-stat-card label="OVERDUE" [value]="overdueCount()" severity="warning" />
-      <app-stat-card label="TOTAL ASSIGNED" [value]="totalCount()" severity="secondary" />
+      <p-card styleClass="stat-card">
+        <div class="stat-value">{{ stats().active }}</div>
+        <div class="stat-label">ACTIVE</div>
+      </p-card>
+      <p-card styleClass="stat-card stat-success">
+        <div class="stat-value">{{ stats().completed }}</div>
+        <div class="stat-label">COMPLETED</div>
+      </p-card>
+      <p-card styleClass="stat-card stat-danger">
+        <div class="stat-value">{{ stats().overdue }}</div>
+        <div class="stat-label">OVERDUE</div>
+      </p-card>
+      <p-card styleClass="stat-card">
+        <div class="stat-value">{{ stats().total }}</div>
+        <div class="stat-label">TOTAL ASSIGNED</div>
+      </p-card>
     </div>
 
     <!-- ──── FILTER TABS ──── -->
     <div class="filter-tabs">
-      <p-button
-        [label]="'I assigned ' + assignedByMeCount()"
-        [filled]="filterState().groupAuthority === 'ASSIGNED_BY_ME'"
-        (click)="onFilterChange('ASSIGNED_BY_ME')"
-        [severity]="filterState().groupAuthority === 'ASSIGNED_BY_ME' ? 'secondary' : 'secondary'"
-      />
-      <p-button
-        [label]="'Assigned to me ' + assignedToMeCount()"
-        [filled]="filterState().groupAuthority === 'ASSIGNED_TO_ME'"
-        (click)="onFilterChange('ASSIGNED_TO_ME')"
-        [severity]="filterState().groupAuthority === 'ASSIGNED_TO_ME' ? 'secondary' : 'secondary'"
-      />
-      <p-button
-        [label]="'All ' + totalCount()"
-        [filled]="filterState().groupAuthority === 'ALL'"
-        (click)="onFilterChange('ALL')"
-        [severity]="filterState().groupAuthority === 'ALL' ? 'secondary' : 'secondary'"
-      />
+      @for (tab of viewTabs; track tab.value) {
+        <p-button
+          [label]="tab.label"
+          [outlined]="activeView() !== tab.value"
+          severity="secondary"
+          (onClick)="activeView.set($any(tab.value))"
+          size="small"
+        />
+      }
     </div>
 
     <!-- ──── SEARCH & ACTIONS ──── -->
@@ -54,63 +73,82 @@
         <input
           pInputText
           type="text"
-          [(ngModel)]="searchQuery"
-          (ngModelChange)="onSearchChange($event)"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
           placeholder="Search tasks..."
         />
       </span>
-
-      <p-button icon="pi pi-filter" label="Filters" severity="secondary" variant="outlined" />
-
       <p-button
         icon="pi pi-plus"
         label="New task"
-        (click)="onOpenTaskForm()"
-        severity="primary"
+        (onClick)="openWizard()"
       />
     </div>
 
     <!-- ──── TASK GRID ──── -->
-    <div class="task-grid">
-      <div *ngFor="let task of filteredTasks()" (click)="onSelectTask(task)">
-        <app-task-card [task]="task" />
+    @if (loading()) {
+      <div class="empty-state">
+        <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
+        <p>Loading tasks...</p>
       </div>
+    } @else if (filteredTasks().length === 0) {
+      <div class="empty-state">
+        <i class="pi pi-inbox" style="font-size:3rem;color:var(--p-text-muted-color)"></i>
+        <p>No tasks found.</p>
+      </div>
+    } @else {
+      <div class="task-grid">
+        @for (task of filteredTasks(); track task.uniqId) {
+          <p-card styleClass="task-card" (click)="openTask(task)">
+            <div class="task-card-header">
+              <p-tag [value]="task.taskType" severity="secondary" styleClass="type-tag" />
+              <p-tag [value]="task.priority" [severity]="prioritySeverity(task.priority)" />
+            </div>
+            <div class="task-code">{{ task.jobTaskId }}</div>
+            <div class="task-title" [class.line-through]="task.jobStatus === 'Completed'">
+              {{ task.taskTitle }}
+            </div>
+            <div class="task-desc">{{ task.taskDescription || '—' }}</div>
+            <div class="task-footer">
+              <div class="assignee-info">
+                <p-avatar [label]="initials(task.assignee?.name)" shape="circle" size="normal" />
+                <span class="assignee-name">{{ task.assignee?.name || 'Unassigned' }}</span>
+              </div>
+              <div class="task-meta-right">
+                <p-tag [value]="task.jobStatus" [severity]="statusSeverity(task.jobStatus)" />
+                @if (isOverdue(task)) {
+                  <span class="overdue-label"><i class="pi pi-exclamation-circle"></i> Overdue</span>
+                }
+              </div>
+            </div>
+          </p-card>
+        }
+      </div>
+    }
 
-      <!-- Empty State -->
-      <div *ngIf="filteredTasks().length === 0 && !loading()" class="empty-state">
-        <i class="pi pi-inbox"></i>
-        <p>No tasks found</p>
-      </div>
-
-      <!-- Loading State -->
-      <div *ngIf="loading()" class="loading-state">
-        <p-skeleton height="300px" />
-      </div>
-    </div>
   </div>
 </main>
 
-<!-- ============== MODALS & DIALOGS ============== -->
+<!-- ============== DIALOGS ============== -->
 
-<!-- Task Detail Drawer / Dialog -->
 <app-task-detail-drawer
-  *ngIf="showTaskDetail() && selectedTask()"
+  *ngIf="showDetail() && selectedTask()"
   [task]="selectedTask()!"
   [staff]="staff()"
   [me]="me()!"
-  (close)="onCloseTaskDetail()"
-  (delete)="onDeleteTask(selectedTask()!.uniqId)"
-  (statusChanged)="onTaskStatusChanged()"
+  (close)="showDetail.set(false)"
+  (delete)="onDeleteTask()"
+  (statusChanged)="onStatusChange(selectedTask()!, $any($event))"
 />
 
-<!-- Task Form Modal -->
 <app-task-form-modal
-  *ngIf="showTaskForm()"
+  *ngIf="showWizard()"
   [staff]="staff()"
   [me]="me()!"
-  (create)="onCreateTask($event)"
-  (cancel)="onCloseTaskForm()"
+  (create)="onCreateFromModal($event)"
+  (cancel)="showWizard.set(false)"
 />
 
-<!-- Toast Messages -->
 <p-toast />
+
+}

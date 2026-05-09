@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { ListboxModule } from 'primeng/listbox';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -20,7 +20,7 @@ import { CreateJobTaskRequest, Staff } from '../../models/task.model';
     ButtonModule,
     DialogModule,
     InputTextModule,
-    InputTextareaModule,
+    TextareaModule,
     SelectModule,
     ListboxModule,
     DatePickerModule,
@@ -100,9 +100,9 @@ export class TaskFormModalComponent {
   onCreate() {
     const request: CreateJobTaskRequest = {
       taskTitle: this.taskTitle(),
-      taskType: this.taskType(),
+      taskType: this.taskType() as import("../../models/task.model").TaskType,
       taskDescription: this.taskDescription(),
-      priority: this.priority(),
+      priority: this.priority() as import("../../models/task.model").Priority,
       assigneeStaffCode: this.assignee()?.staffCode || '',
       dueDate: this.dueDate() ? this.dueDate()!.toISOString() : '',
     };

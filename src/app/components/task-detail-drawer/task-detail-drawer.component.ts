@@ -6,7 +6,7 @@ import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { BadgeModule } from 'primeng/badge';
 import { AvatarModule } from 'primeng/avatar';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { JobTask, Staff, Status } from '../../models/task.model';
 import { TaskService } from '../../services/task.service';
@@ -23,7 +23,7 @@ import { inject } from '@angular/core';
     TagModule,
     BadgeModule,
     AvatarModule,
-    InputTextareaModule,
+    TextareaModule,
     SelectModule,
   ],
   templateUrl: './task-detail-drawer.component.html',
@@ -47,7 +47,7 @@ export class TaskDetailDrawerComponent {
 
   onStatusChange(status: Status) {
     this.selectedStatus = status;
-    this.taskService.updateStatus(this.task.uniqId, { jobStatus: status }).subscribe({
+    this.taskService.updateStatus(this.task.uniqId, status, this.me?.staffId).subscribe({
       next: () => {
         this.statusChanged.emit();
       },

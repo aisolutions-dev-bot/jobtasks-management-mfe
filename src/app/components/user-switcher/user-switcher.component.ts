@@ -1,14 +1,14 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { AvatarModule } from 'primeng/avatar';
 import { Staff } from '../../models/task.model';
 
 @Component({
   selector: 'app-user-switcher',
   standalone: true,
-  imports: [CommonModule, ButtonModule, DropdownModule, AvatarModule],
+  imports: [CommonModule, ButtonModule, SelectModule, AvatarModule],
   template: `
     <div class="user-switcher">
       <p-dropdown
