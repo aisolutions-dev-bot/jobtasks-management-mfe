@@ -1,5 +1,5 @@
 <p-dialog
-  [(visible)]="true"
+  [visible]="true"
   [modal]="true"
   [header]="task.taskTitle"
   [style]="{ width: '50vw' }"
@@ -20,9 +20,9 @@
       <p-button
         *ngFor="let status of statuses"
         [label]="status"
-        [filled]="selectedStatus === status"
+        [outlined]="selectedStatus !== status"
         [severity]="selectedStatus === status ? 'primary' : 'secondary'"
-        (click)="onStatusChange(status as any)"
+        (click)="onStatusChange($any(status))"
         size="small"
       />
     </div>
@@ -38,7 +38,7 @@
           <p-avatar
             [label]="(task.assignor.name || 'U').substring(0, 1)"
             shape="circle"
-            size="small"
+            size="normal"
             [style]="{ 'background-color': task.assignor.avatarColor, color: '#fff' }"
           />
           <div>
@@ -55,7 +55,7 @@
           <p-avatar
             [label]="(task.assignee.name || 'U').substring(0, 1)"
             shape="circle"
-            size="small"
+            size="normal"
             [style]="{ 'background-color': task.assignee.avatarColor, color: '#fff' }"
           />
           <div>

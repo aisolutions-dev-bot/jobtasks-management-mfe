@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { AvatarModule } from 'primeng/avatar';
@@ -8,14 +9,14 @@ import { Staff } from '../../models/task.model';
 @Component({
   selector: 'app-user-switcher',
   standalone: true,
-  imports: [CommonModule, ButtonModule, SelectModule, AvatarModule],
+  imports: [CommonModule, FormsModule, ButtonModule, SelectModule, AvatarModule],
   template: `
     <div class="user-switcher">
-      <p-dropdown
+      <p-select
         [options]="staff"
         [(ngModel)]="selectedStaff"
         optionLabel="name"
-        (onChange)="onSelectStaff($event.value)"
+        (onChange)="onSelectStaff($event)"
         [showClear]="false"
         styleClass="w-full"
       >
@@ -24,7 +25,7 @@ import { Staff } from '../../models/task.model';
             <p-avatar
               [label]="initials"
               shape="circle"
-              size="small"
+              size="normal"
               [style]="{ 'background-color': selectedStaff?.avatarColor || '#6b7280', color: '#fff' }"
             />
             <span>{{ selectedStaff?.name }}</span>
@@ -36,7 +37,7 @@ import { Staff } from '../../models/task.model';
             <p-avatar
               [label]="getInitials(option.name)"
               shape="circle"
-              size="small"
+              size="normal"
               [style]="{ 'background-color': option.avatarColor, color: '#fff' }"
             />
             <div>
@@ -45,7 +46,7 @@ import { Staff } from '../../models/task.model';
             </div>
           </div>
         </ng-template>
-      </p-dropdown>
+      </p-select>
     </div>
   `,
   styles: [`

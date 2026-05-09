@@ -1,5 +1,5 @@
 <p-dialog
-  [(visible)]="true"
+  [visible]="true"
   [modal]="true"
   header="New Task"
   [style]="{ width: '40vw' }"
@@ -73,7 +73,7 @@
           <p-avatar
             [label]="getStaffInitials(s.name)"
             shape="circle"
-            size="small"
+            size="normal"
             [style]="{ 'background-color': s.avatarColor, color: '#fff' }"
           />
           <div class="assignee-info">

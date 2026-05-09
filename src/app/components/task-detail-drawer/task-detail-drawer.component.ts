@@ -66,7 +66,7 @@ export class TaskDetailDrawerComponent {
     return severities[taskType] || 'secondary';
   }
 
-  getPrioritySeverity(priority: string): string {
+  getPrioritySeverity(priority: string): 'success'|'info'|'warn'|'danger'|'secondary'|'contrast' {
     const severities: Record<string, string> = {
       'High': 'danger',
       'Urgent': 'warning',
