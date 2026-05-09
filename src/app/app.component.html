@@ -325,7 +325,7 @@
   @if (wizardStep() === 3) {
     <div class="wizard-body">
       <label class="field-label">Description</label>
-      <textarea pTextarea rows="4"
+      <textarea pTextarea rows="10"
                 [value]="newDesc()"
                 (input)="newDesc.set($any($event.target).value)"
                 placeholder="Describe the task..."
