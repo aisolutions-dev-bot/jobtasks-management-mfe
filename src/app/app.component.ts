@@ -19,9 +19,6 @@ import { JobTask, Staff, Status, TaskType, Priority, CreateJobTaskRequest } from
 import { IAuthService } from './models/auth';
 import { TaskService } from './services/task.service';
 import { StaffService } from './services/staff.service';
-import { UserSwitcherComponent } from './components/user-switcher/user-switcher.component';
-import { TaskDetailDrawerComponent } from './components/task-detail-drawer/task-detail-drawer.component';
-import { TaskFormModalComponent } from './components/task-form-modal/task-form-modal.component';
 
 @Component({
   selector: 'app-root',
@@ -31,7 +28,6 @@ import { TaskFormModalComponent } from './components/task-form-modal/task-form-m
     CardModule, ButtonModule, InputTextModule, TagModule, BadgeModule,
     DialogModule, ToastModule, AvatarModule,
     DividerModule, DatePickerModule, TextareaModule, SkeletonModule,
-    UserSwitcherComponent, TaskDetailDrawerComponent, TaskFormModalComponent,
   ],
   providers: [MessageService],
   templateUrl: './app.component.html',
@@ -57,17 +53,6 @@ export class AppComponent implements OnInit {
   loading      = signal(false);
   accessDenied = signal(false);   // true when a2401 = 0
   rbacLoading  = signal(true);    // true while checking RBAC
-
-  // Staff search (for wizard Step 2)
-  staffSearchQuery = signal('');
-  filteredStaff = computed(() => {
-    const q = this.staffSearchQuery().toLowerCase().trim();
-    if (!q) return this.staff();
-    return this.staff().filter(s =>
-      (s.name?.toLowerCase().includes(q) || false) ||
-      (s.staffId?.toLowerCase().includes(q) || false)
-    );
-  });
 
   // Detail dialog
   showDetail   = signal(false);
@@ -317,23 +302,4 @@ export class AppComponent implements OnInit {
     if (!name) return '?';
     return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
   }
-  /** Called by app-user-switcher when user switches */
-  onSelectStaff(s: Staff) {
-    this.me.set(s);
-    this.loadTasks();
-  }
-
-  /** Called by app-task-form-modal create event */
-  onCreateFromModal(req: CreateJobTaskRequest) {
-    this.taskService.create(req).subscribe({
-      next: created => {
-        this.tasks.update(list => [created, ...list]);
-        this.showWizard.set(false);
-        this.msgService.add({ severity: 'success', summary: 'Task created!', life: 2000 });
-      },
-      error: () => this.msgService.add({ severity: 'error', summary: 'Failed to create task', life: 3000 }),
-    });
-  }
-
-
 }
