@@ -54,6 +54,15 @@ export class AppComponent implements OnInit {
   accessDenied = signal(false);   // true when a2401 = 0
   rbacLoading  = signal(true);    // true while checking RBAC
 
+  filteredStaff = computed(() => {
+    const q = this.staffSearchQuery().toLowerCase().trim();
+    if (!q) return this.staff();
+    return this.staff().filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.staffId.toLowerCase().includes(q)
+    );
+  });
+
   // Detail dialog
   showDetail   = signal(false);
   selectedTask = signal<JobTask | null>(null);
@@ -67,6 +76,9 @@ export class AppComponent implements OnInit {
   newPriority  = signal<Priority>('Medium');
   newDueDate: Date | null = null;
   newDesc      = signal('');
+
+  // Staff search (Step 2)
+  staffSearchQuery = signal('');
 
   statusOptions = [
     { label: 'Pending',     value: 'Pending' },

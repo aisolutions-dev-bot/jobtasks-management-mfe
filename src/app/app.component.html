@@ -269,14 +269,24 @@
           <i class="pi pi-spin pi-spinner"></i> Loading staff list...
         </div>
       } @else {
+      <!-- Search box -->
+      <div class="staff-search">
+        <span class="p-input-icon-left">
+          <i class="pi pi-search"></i>
+          <input pInputText type="text" placeholder="Search by ID or name..."
+                 [ngModel]="staffSearchQuery()"
+                 (ngModelChange)="staffSearchQuery.set($event)" />
+        </span>
+      </div>
       <div class="staff-list">
-        @for (s of staff(); track s.staffCode) {
+        @for (s of filteredStaff(); track s.staffCode) {
           <div class="staff-item"
                [class.selected]="newAssignee()?.staffCode === s.staffCode"
                (click)="newAssignee.set(s)">
             <p-avatar [label]="initials(s.name)" shape="circle" size="normal" />
             <div class="staff-item-info">
               <div class="staff-name">{{ s.name }}</div>
+              <div class="staff-id">{{ s.staffId }}</div>
               <div class="staff-role">{{ s.appointment || s.department }}</div>
             </div>
             @if (newAssignee()?.staffCode === s.staffCode) {
