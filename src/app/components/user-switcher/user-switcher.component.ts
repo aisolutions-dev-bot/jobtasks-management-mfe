@@ -55,7 +55,7 @@ import { Staff } from '../../models/task.model';
     }
 
     :deep {
-      .p-dropdown {
+      .p-select {
         width: 100%;
       }
     }
