@@ -47,9 +47,25 @@
     <!-- Assignee -->
     <div class="form-group">
       <label>Assign To</label>
+
+      <!-- Search Box -->
+      <div class="staff-search">
+        <span class="p-input-icon-left">
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            type="text"
+            placeholder="Search by ID or name..."
+            [(ngModel)]="staffSearchQuery"
+            (input)="filterStaffList()"
+          />
+        </span>
+      </div>
+
+      <!-- Staff List -->
       <div class="assignee-list">
         <button
-          *ngFor="let s of staff"
+          *ngFor="let s of filteredStaffList()"
           (click)="onSelectStaff(s)"
           [ngClass]="{ selected: assignee() === s }"
           class="assignee-button"
@@ -62,7 +78,8 @@
           />
           <div class="assignee-info">
             <div class="name">{{ s.name }}</div>
-            <div class="role">{{ s.appointment }} · {{ s.department }}</div>
+            <div class="staff-id">{{ s.staffId }}</div>
+            <div class="role">{{ s.appointment || s.department }}</div>
           </div>
           <i *ngIf="assignee() === s" class="pi pi-check"></i>
         </button>

@@ -97,6 +97,23 @@
   }
 }
 
+// ──── Staff Search ────
+.staff-search {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--p-surface-200);
+  margin-bottom: 0.75rem;
+  background: var(--p-surface-50);
+
+  .p-input-icon-left {
+    width: 100%;
+  }
+
+  input {
+    width: 100%;
+    font-size: 0.875rem;
+  }
+}
+
 .assignee-list {
   display: flex;
   flex-direction: column;
@@ -133,6 +150,13 @@
     .name {
       font-weight: 600;
       font-size: 0.875rem;
+    }
+
+    .staff-id {
+      font-size: 0.72rem;
+      color: var(--p-primary-color);
+      font-family: monospace;
+      margin: 0.125rem 0;
     }
 
     .role {

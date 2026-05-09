@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -45,6 +45,17 @@ export class TaskFormModalComponent {
   assignee = signal<Staff | null>(null);
   dueDate = signal<Date | null>(null);
 
+  // Staff search for Step 2
+  staffSearchQuery = signal('');
+  filteredStaffList = computed(() => {
+    const q = this.staffSearchQuery().toLowerCase().trim();
+    if (!q) return this.staff;
+    return this.staff.filter(s =>
+      (s.name?.toLowerCase().includes(q) || false) ||
+      (s.staffId?.toLowerCase().includes(q) || false)
+    );
+  });
+
   taskTypes = [
     'Job Support',
     'Technical Support',
@@ -79,6 +90,11 @@ export class TaskFormModalComponent {
 
   onSelectStaff(staff: Staff) {
     this.assignee.set(this.assignee() === staff ? null : staff);
+  }
+
+  filterStaffList() {
+    // The computed property handles the filtering automatically
+    // This method is just for the (input) event trigger
   }
 
   onCreate() {

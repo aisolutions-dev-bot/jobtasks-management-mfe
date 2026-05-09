@@ -54,6 +54,17 @@ export class AppComponent implements OnInit {
   accessDenied = signal(false);   // true when a2401 = 0
   rbacLoading  = signal(true);    // true while checking RBAC
 
+  // Staff search (for wizard Step 2)
+  staffSearchQuery = signal('');
+  filteredStaff = computed(() => {
+    const q = this.staffSearchQuery().toLowerCase().trim();
+    if (!q) return this.staff();
+    return this.staff().filter(s =>
+      (s.name?.toLowerCase().includes(q) || false) ||
+      (s.staffId?.toLowerCase().includes(q) || false)
+    );
+  });
+
   // Detail dialog
   showDetail   = signal(false);
   selectedTask = signal<JobTask | null>(null);
