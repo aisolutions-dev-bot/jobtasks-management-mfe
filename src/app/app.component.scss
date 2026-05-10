@@ -182,6 +182,54 @@
   word-break: break-word;
 }
 
+/* Label row with inline edit button */
+.detail-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+/* Description edit textarea */
+.desc-edit-area {
+  width: 100%;
+  resize: vertical;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.desc-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Detail screen upload zone */
+.detail-upload-zone {
+  border: 1px dashed var(--p-surface-400);
+  border-radius: var(--p-border-radius);
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  &.drag-over {
+    border-color: var(--p-primary-color);
+    background: color-mix(in srgb, var(--p-primary-color) 5%, transparent);
+  }
+
+  .pi-cloud-upload { font-size: 1.1rem; color: var(--p-text-muted-color); }
+  .drop-text       { font-size: 0.82rem; font-weight: 500; }
+  .drop-or         { font-size: 0.78rem; color: var(--p-text-muted-color); }
+  .drop-hint       { font-size: 0.68rem; color: var(--p-text-muted-color); flex-basis: 100%; line-height: 1.2; }
+}
+
 /* ── Wizard ────────────────────────────────────────────────────────────── */
 .wizard-header { display: flex; flex-direction: column; gap: 0.25rem; }
 

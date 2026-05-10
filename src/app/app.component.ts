@@ -134,6 +134,16 @@ export class AppComponent implements OnInit {
   previewLoading    = signal(false);
   downloading       = signal(false);
 
+  // ── Edit description (assignor only) ──────────────────────────────
+  editingDesc   = signal(false);
+  editDescValue = signal('');
+  savingDesc    = signal(false);
+
+  // ── Detail screen upload (assignor + assignee) ───────────────────
+  detailPendingFiles = signal<{ file: File; name: string; size: string }[]>([]);
+  detailIsDragOver   = signal(false);
+  uploadingDetail    = signal(false);
+
   constructor(
     @Inject('AUTH_SERVICE') private authService: IAuthService,
   ) {}
@@ -251,6 +261,8 @@ export class AppComponent implements OnInit {
   openTask(task: JobTask) {
     this.selectedTask.set(task);
     this.attachments.set([]);
+    this.editingDesc.set(false);
+    this.detailPendingFiles.set([]);
     this.showDetail.set(true);
     if (task.jobTaskId) {
       this.loadAttachments(task.jobTaskId);
@@ -522,6 +534,109 @@ export class AppComponent implements OnInit {
         this.msgService.add({ severity: 'success', summary: 'Status updated', life: 2000 });
       },
       error: () => this.msgService.add({ severity: 'error', summary: 'Failed to update status', life: 3000 }),
+    });
+  }
+
+  // ── Edit description ──────────────────────────────────────────────
+
+  startEditDesc() {
+    const task = this.selectedTask();
+    if (!task) return;
+    this.editDescValue.set(task.taskDescription ?? '');
+    this.editingDesc.set(true);
+  }
+
+  cancelEditDesc() {
+    this.editingDesc.set(false);
+  }
+
+  saveDesc() {
+    const task = this.selectedTask();
+    if (!task) return;
+    this.savingDesc.set(true);
+    this.taskService.update(task.uniqId, {
+      taskTitle:       task.taskTitle,
+      taskType:        task.taskType,
+      taskDescription: this.editDescValue(),
+      assigneeStaffId: task.assignee?.staffId,
+      priority:        task.priority,
+      lastEditStaff:   this.me()?.staffId,
+    }).subscribe({
+      next: updated => {
+        this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
+        this.selectedTask.set(updated);
+        this.editingDesc.set(false);
+        this.savingDesc.set(false);
+        this.msgService.add({ severity: 'success', summary: 'Description saved', life: 2000 });
+      },
+      error: () => {
+        this.savingDesc.set(false);
+        this.msgService.add({ severity: 'error', summary: 'Failed to save description', life: 3000 });
+      },
+    });
+  }
+
+  // ── Detail screen upload ───────────────────────────────────────
+
+  onDetailDragOver(e: DragEvent)  { e.preventDefault(); e.stopPropagation(); this.detailIsDragOver.set(true); }
+  onDetailDragLeave(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.detailIsDragOver.set(false); }
+
+  onDetailFileDrop(e: DragEvent) {
+    e.preventDefault(); e.stopPropagation();
+    this.detailIsDragOver.set(false);
+    const files = e.dataTransfer?.files;
+    if (files) this.addDetailFiles(Array.from(files));
+  }
+
+  triggerDetailFileInput() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.multiple = true; input.accept = this.acceptedTypes;
+    input.onchange = (ev) => {
+      const i = ev.target as HTMLInputElement;
+      if (i.files) { this.addDetailFiles(Array.from(i.files)); i.value = ''; }
+    };
+    input.click();
+  }
+
+  private addDetailFiles(files: File[]) {
+    const current = this.detailPendingFiles();
+    const added: { file: File; name: string; size: string }[] = [];
+    for (const f of files) {
+      if (f.size > this.maxFileSize) {
+        this.msgService.add({ severity: 'warn', summary: 'File too large', detail: `"${f.name}" exceeds 20 MB`, life: 3000 });
+        continue;
+      }
+      if (current.some(p => p.name === f.name)) continue;
+      added.push({ file: f, name: f.name, size: this.formatFileSize(f.size) });
+    }
+    this.detailPendingFiles.set([...current, ...added]);
+  }
+
+  removeDetailFile(index: number, e: Event) {
+    e.stopPropagation();
+    const list = [...this.detailPendingFiles()];
+    list.splice(index, 1);
+    this.detailPendingFiles.set(list);
+  }
+
+  uploadDetailFiles() {
+    const task = this.selectedTask();
+    if (!task?.jobTaskId || this.detailPendingFiles().length === 0) return;
+    this.uploadingDetail.set(true);
+    const uploads = this.detailPendingFiles().map(pf =>
+      this.taskService.uploadAttachment(task.jobTaskId!, pf.file, this.me()?.staffId)
+    );
+    forkJoin(uploads).subscribe({
+      next: () => {
+        this.detailPendingFiles.set([]);
+        this.uploadingDetail.set(false);
+        this.loadAttachments(task.jobTaskId!);
+        this.msgService.add({ severity: 'success', summary: 'Files uploaded', life: 2000 });
+      },
+      error: () => {
+        this.uploadingDetail.set(false);
+        this.msgService.add({ severity: 'error', summary: 'Upload failed', life: 3000 });
+      },
     });
   }
 

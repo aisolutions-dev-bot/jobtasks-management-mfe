@@ -217,8 +217,29 @@
 
     <!-- Description -->
     <div class="detail-section">
-      <div class="detail-label">DESCRIPTION</div>
-      <div class="detail-desc detail-desc-pre">{{ task.taskDescription || '—' }}</div>
+      <div class="detail-label-row">
+        <div class="detail-label">DESCRIPTION</div>
+        @if (isAssignorOfSelected() && !editingDesc()) {
+          <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" size="small"
+                    severity="secondary" pTooltip="Edit description"
+                    (onClick)="startEditDesc()" />
+        }
+      </div>
+      @if (editingDesc()) {
+        <textarea pTextarea rows="6"
+                  [ngModel]="editDescValue()"
+                  (ngModelChange)="editDescValue.set($event)"
+                  class="w-full desc-edit-area"></textarea>
+        <div class="desc-edit-actions">
+          <p-button label="Cancel" [outlined]="true" severity="secondary" size="small"
+                    (onClick)="cancelEditDesc()" />
+          <p-button label="Save" icon="pi pi-check" size="small"
+                    [loading]="savingDesc()"
+                    (onClick)="saveDesc()" />
+        </div>
+      } @else {
+        <div class="detail-desc detail-desc-pre">{{ task.taskDescription || '—' }}</div>
+      }
     </div>
 
     <p-divider />
@@ -227,7 +248,8 @@
 
     <!-- Attachments -->
     <div class="detail-section">
-      <div class="detail-label">ATTACHMENTS</div>
+      <div class="detail-label">ATTACHMENTS ({{ attachments().length }})</div>
+
       @if (attachmentsLoading()) {
         <div class="attachments-loading">
           <i class="pi pi-spin pi-spinner"></i> Loading...
@@ -259,6 +281,44 @@
             </div>
           }
         </div>
+      }
+
+      <!-- Upload zone — visible to assignor and assignee -->
+      @if (isAssigneeOrAssignorOfSelected()) {
+        <div class="detail-upload-zone"
+             [class.drag-over]="detailIsDragOver()"
+             (dragover)="onDetailDragOver($event)"
+             (dragleave)="onDetailDragLeave($event)"
+             (drop)="onDetailFileDrop($event)">
+          <i class="pi pi-cloud-upload"></i>
+          <span class="drop-text">Drag &amp; drop files here</span>
+          <span class="drop-or">or</span>
+          <p-button icon="pi pi-folder-open" label="Browse" [outlined]="true"
+                    severity="secondary" size="small"
+                    (onClick)="triggerDetailFileInput()" />
+          <span class="drop-hint">Max 20 MB &bull; .pdf .doc .docx .xls .xlsx .jpg .jpeg .png .md</span>
+        </div>
+
+        @if (detailPendingFiles().length > 0) {
+          <div class="wizard-file-list" style="margin-top:0.5rem">
+            @for (f of detailPendingFiles(); track f.name; let i = $index) {
+              <div class="wizard-file-item">
+                <i [class]="getFileIcon(f.name)"></i>
+                <div class="wizard-file-info">
+                  <span class="wizard-file-name">{{ f.name }}</span>
+                  <span class="wizard-file-size">{{ f.size }}</span>
+                </div>
+                <p-button icon="pi pi-times" [rounded]="true" [text]="true"
+                          severity="danger" (onClick)="removeDetailFile(i, $event)" />
+              </div>
+            }
+          </div>
+          <div style="margin-top:0.5rem">
+            <p-button label="Upload" icon="pi pi-upload" size="small"
+                      [loading]="uploadingDetail()"
+                      (onClick)="uploadDetailFiles()" />
+          </div>
+        }
       }
     </div>
 
