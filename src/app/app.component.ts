@@ -14,8 +14,12 @@ import { DividerModule } from 'primeng/divider';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TextareaModule } from 'primeng/textarea';
 import { SkeletonModule } from 'primeng/skeleton';
+import { DrawerModule } from 'primeng/drawer';
+import { TooltipModule } from 'primeng/tooltip';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { forkJoin } from 'rxjs';
 
-import { JobTask, Staff, Status, TaskType, Priority, CreateJobTaskRequest } from './models/task.model';
+import { JobTask, Staff, Status, TaskType, Priority, CreateJobTaskRequest, TaskAttachment } from './models/task.model';
 import { IAuthService } from './models/auth';
 import { TaskService } from './services/task.service';
 import { StaffService } from './services/staff.service';
@@ -28,6 +32,7 @@ import { StaffService } from './services/staff.service';
     CardModule, ButtonModule, InputTextModule, TagModule, BadgeModule,
     DialogModule, ToastModule, AvatarModule,
     DividerModule, DatePickerModule, TextareaModule, SkeletonModule,
+    DrawerModule, TooltipModule,
   ],
   providers: [MessageService],
   templateUrl: './app.component.html',
@@ -99,6 +104,26 @@ export class AppComponent implements OnInit {
     { label: 'I assigned',     value: 'ASSIGNED_BY_ME' },
     { label: 'Assigned to me', value: 'ASSIGNED_TO_ME' },
   ];
+
+  private sanitizer = inject(DomSanitizer);
+
+  // ── Wizard attachments (pending, not yet uploaded) ─────────────────────
+  pendingFiles   = signal<{ file: File; name: string; size: string }[]>([]);
+  isDragOver     = signal(false);
+  readonly acceptedTypes = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
+  readonly maxFileSize   = 20 * 1024 * 1024;
+
+  // ── Detail dialog: loaded attachments ────────────────────────────
+  attachments       = signal<TaskAttachment[]>([]);
+  attachmentsLoading = signal(false);
+
+  // ── Preview drawer ────────────────────────────────────────────
+  previewVisible    = signal(false);
+  previewFile       = signal<TaskAttachment | null>(null);
+  previewUrl        = signal<string | null>(null);
+  safePreviewUrl    = signal<SafeResourceUrl | null>(null);
+  previewLoading    = signal(false);
+  downloading       = signal(false);
 
   constructor(
     @Inject('AUTH_SERVICE') private authService: IAuthService,
@@ -216,7 +241,163 @@ export class AppComponent implements OnInit {
 
   openTask(task: JobTask) {
     this.selectedTask.set(task);
+    this.attachments.set([]);
     this.showDetail.set(true);
+    if (task.jobTaskId) {
+      this.loadAttachments(task.jobTaskId);
+    }
+  }
+
+  private loadAttachments(jobTaskId: string) {
+    this.attachmentsLoading.set(true);
+    this.taskService.getAttachments(jobTaskId).subscribe({
+      next:  list => { this.attachments.set(list); this.attachmentsLoading.set(false); },
+      error: e    => { console.error('loadAttachments error', e); this.attachmentsLoading.set(false); },
+    });
+  }
+
+  // ── Wizard file helpers ──────────────────────────────────────────
+
+  onDragOver(e: DragEvent)  { e.preventDefault(); e.stopPropagation(); this.isDragOver.set(true); }
+  onDragLeave(e: DragEvent) { e.preventDefault(); e.stopPropagation(); this.isDragOver.set(false); }
+
+  onFileDrop(e: DragEvent) {
+    e.preventDefault(); e.stopPropagation();
+    this.isDragOver.set(false);
+    const files = e.dataTransfer?.files;
+    if (files) this.addFiles(Array.from(files));
+  }
+
+  triggerFileInput() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.multiple = true; input.accept = this.acceptedTypes;
+    input.onchange = (ev) => this.onFileSelect(ev);
+    input.click();
+  }
+
+  private onFileSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files) { this.addFiles(Array.from(input.files)); input.value = ''; }
+  }
+
+  private addFiles(files: File[]) {
+    const current = this.pendingFiles();
+    const added: { file: File; name: string; size: string }[] = [];
+    for (const f of files) {
+      if (f.size > this.maxFileSize) {
+        this.msgService.add({ severity: 'warn', summary: 'File too large', detail: `"${f.name}" exceeds 20 MB`, life: 3000 });
+        continue;
+      }
+      if (current.some(p => p.name === f.name)) continue;
+      added.push({ file: f, name: f.name, size: this.formatFileSize(f.size) });
+    }
+    this.pendingFiles.set([...current, ...added]);
+  }
+
+  removeFile(index: number, e: Event) {
+    e.stopPropagation();
+    const list = [...this.pendingFiles()];
+    list.splice(index, 1);
+    this.pendingFiles.set(list);
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  getFileIcon(name: string): string {
+    const ext = name.split('.').pop()?.toLowerCase() || '';
+    switch (ext) {
+      case 'pdf': return 'pi pi-file-pdf';
+      case 'doc': case 'docx': return 'pi pi-file-word';
+      case 'xls': case 'xlsx': return 'pi pi-file-excel';
+      case 'jpg': case 'jpeg': case 'png': return 'pi pi-image';
+      default: return 'pi pi-file';
+    }
+  }
+
+  isPreviewable(name: string): boolean {
+    const ext = name.split('.').pop()?.toLowerCase() || '';
+    return ['pdf', 'jpg', 'jpeg', 'png'].includes(ext);
+  }
+
+  isPdf(name: string)   { return name.split('.').pop()?.toLowerCase() === 'pdf'; }
+  isImage(name: string) { const e = name.split('.').pop()?.toLowerCase() || ''; return ['jpg','jpeg','png'].includes(e); }
+
+  // ── Preview drawer ───────────────────────────────────────────────
+
+  onViewAttachment(attachment: TaskAttachment) {
+    this.previewFile.set(attachment);
+    this.previewUrl.set(null);
+    this.safePreviewUrl.set(null);
+    this.previewVisible.set(true);
+    if (this.isPreviewable(attachment.originalName)) {
+      this.loadPreview(attachment);
+    }
+  }
+
+  private loadPreview(attachment: TaskAttachment) {
+    this.previewLoading.set(true);
+    this.taskService.downloadAttachment(attachment.uniqId).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        this.previewUrl.set(url);
+        this.safePreviewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+        this.previewLoading.set(false);
+      },
+      error: e => {
+        console.error('loadPreview error', e);
+        this.previewLoading.set(false);
+        this.msgService.add({ severity: 'error', summary: 'Preview failed', detail: String(e), life: 3000 });
+      },
+    });
+  }
+
+  onDownloadAttachment(attachment: TaskAttachment) {
+    this.downloading.set(true);
+    this.taskService.downloadAttachment(attachment.uniqId).subscribe({
+      next: blob => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = attachment.originalName; link.click();
+        URL.revokeObjectURL(url);
+        this.downloading.set(false);
+      },
+      error: e => {
+        console.error('download error', e);
+        this.downloading.set(false);
+        this.msgService.add({ severity: 'error', summary: 'Download failed', detail: String(e), life: 3000 });
+      },
+    });
+  }
+
+  onOpenAttachmentInNewTab(attachment: TaskAttachment) {
+    this.taskService.downloadAttachment(attachment.uniqId).subscribe({
+      next:  blob => { const url = URL.createObjectURL(blob); window.open(url, '_blank'); },
+      error: e    => this.msgService.add({ severity: 'error', summary: 'Open failed', detail: String(e), life: 3000 }),
+    });
+  }
+
+  closePreview() {
+    const url = this.previewUrl();
+    if (url) URL.revokeObjectURL(url);
+    this.previewVisible.set(false);
+    this.previewFile.set(null);
+    this.previewUrl.set(null);
+    this.safePreviewUrl.set(null);
+    this.previewLoading.set(false);
+  }
+
+  getDrawerWidth(): string {
+    if (typeof window !== 'undefined') {
+      const w = window.innerWidth;
+      if (w <= 480) return '100%';
+      if (w <= 768) return '35rem';
+    }
+    return '45rem';
   }
 
   onStatusChange(task: JobTask, status: Status) {
@@ -267,6 +448,7 @@ export class AppComponent implements OnInit {
     this.wizardStep.set(1);
     this.newTitle.set(''); this.newType.set(''); this.newAssignee.set(null);
     this.newPriority.set('Medium'); this.newDueDate = null; this.newDesc.set('');
+    this.pendingFiles.set([]);
     if (this.staff().length === 0) this.loadStaff();
     this.showWizard.set(true);
   }
@@ -299,6 +481,17 @@ export class AppComponent implements OnInit {
     this.taskService.create(req).subscribe({
       next: created => {
         this.tasks.update(list => [created, ...list]);
+        // Upload any pending attachments now that we have the jobTaskId
+        if (this.pendingFiles().length > 0 && created.jobTaskId) {
+          const uploads = this.pendingFiles().map(pf =>
+            this.taskService.uploadAttachment(created.jobTaskId!, pf.file, me.staffId)
+          );
+          forkJoin(uploads).subscribe({
+            next:  () => {},
+            error: e  => this.msgService.add({ severity: 'warn', summary: 'Attachments partial', detail: 'Task created but some files failed', life: 4000 }),
+          });
+        }
+        this.pendingFiles.set([]);
         this.showWizard.set(false);
         this.msgService.add({ severity: 'success', summary: 'Task created!', life: 2000 });
       },

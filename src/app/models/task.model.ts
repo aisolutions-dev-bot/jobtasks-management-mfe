@@ -79,6 +79,25 @@ export interface UpdateStatusRequest {
   lastEditStaff?: string;
 }
 
+// ─── Attachment ────────────────────────────────────────────────────────────
+
+export interface TaskAttachment {
+  uniqId:        number;
+  moduleType:    string;
+  referenceCode: string;
+  fileName:      string;
+  originalName:  string;
+  fileSize:      number;
+  storageType:   string;
+  contentType:   string;
+  fileExtension: string;
+  filePath:      string;
+  description?:  string;
+  uploadSource:  string;
+  entryStaff?:   string;
+  entryDate?:    string;
+}
+
 export interface FilterState {
   viewMode: 'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME';
   status:   Status | 'all';

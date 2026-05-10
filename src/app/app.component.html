@@ -213,6 +213,47 @@
 
     <p-divider />
 
+    <p-divider />
+
+    <!-- Attachments -->
+    <div class="detail-section">
+      <div class="detail-label">ATTACHMENTS</div>
+      @if (attachmentsLoading()) {
+        <div class="attachments-loading">
+          <i class="pi pi-spin pi-spinner"></i> Loading...
+        </div>
+      } @else if (attachments().length === 0) {
+        <div class="no-attachments">
+          <i class="pi pi-inbox"></i>
+          <span>No attachments</span>
+        </div>
+      } @else {
+        <div class="attachment-list">
+          @for (att of attachments(); track att.uniqId) {
+            <div class="attachment-item">
+              <i [class]="getFileIcon(att.originalName)"></i>
+              <div class="attachment-info clickable" (click)="onOpenAttachmentInNewTab(att)">
+                <span class="attachment-name">{{ att.originalName }}</span>
+                <span class="attachment-size">{{ formatFileSize(att.fileSize) }}</span>
+              </div>
+              <div class="attachment-actions">
+                @if (isPreviewable(att.originalName)) {
+                  <p-button icon="pi pi-eye" [rounded]="true" [text]="true"
+                            severity="info" pTooltip="Preview"
+                            (onClick)="onViewAttachment(att)" />
+                }
+                <p-button icon="pi pi-download" [rounded]="true" [text]="true"
+                          severity="primary" pTooltip="Download"
+                          (onClick)="onDownloadAttachment(att)" />
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <p-divider />
+
     <!-- Delete — only the assignor can delete -->
     @if (isAssignorOfSelected()) {
       <p-button label="Delete task" icon="pi pi-trash"
@@ -221,6 +262,57 @@
     }
   }
 </p-dialog>
+
+<!-- ── FILE PREVIEW DRAWER ────────────────────────────────────────────────── -->
+<p-drawer
+  [(visible)]="previewVisible"
+  position="right"
+  [style]="{ width: getDrawerWidth() }"
+  [modal]="true"
+  (onHide)="closePreview()">
+
+  <ng-template #header>
+    @if (previewFile(); as file) {
+      <div class="preview-drawer-header">
+        <i [class]="getFileIcon(file.originalName)"></i>
+        <span>{{ file.originalName }}</span>
+      </div>
+    }
+  </ng-template>
+
+  <ng-template #content>
+    @if (previewFile(); as file) {
+      <div class="preview-drawer-content">
+        @if (previewLoading()) {
+          <div class="preview-spinner">
+            <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
+            <span>Loading preview...</span>
+          </div>
+        } @else if (safePreviewUrl(); as url) {
+          @if (isPdf(file.originalName)) {
+            <iframe [src]="url" class="preview-iframe"></iframe>
+          } @else if (isImage(file.originalName)) {
+            <img [src]="url" class="preview-image" [alt]="file.originalName" />
+          }
+        } @else if (!isPreviewable(file.originalName)) {
+          <div class="preview-placeholder">
+            <i [class]="getFileIcon(file.originalName)" style="font-size:3rem"></i>
+            <span>Preview not available for this file type</span>
+          </div>
+        }
+
+        <div class="preview-drawer-actions">
+          <p-button label="Download" icon="pi pi-download" severity="primary"
+                    [loading]="downloading()"
+                    (onClick)="onDownloadAttachment(file)" />
+          <p-button label="Open in new tab" icon="pi pi-external-link"
+                    severity="secondary" [outlined]="true"
+                    (onClick)="onOpenAttachmentInNewTab(file)" />
+        </div>
+      </div>
+    }
+  </ng-template>
+</p-drawer>
 
 <!-- ── CREATE WIZARD DIALOG ── -->
 <p-dialog
@@ -334,11 +426,43 @@
   @if (wizardStep() === 3) {
     <div class="wizard-body">
       <label class="field-label">Description</label>
-      <textarea pTextarea rows="10"
+      <textarea pTextarea rows="5"
                 [value]="newDesc()"
                 (input)="newDesc.set($any($event.target).value)"
                 placeholder="Describe the task..."
                 class="w-full"></textarea>
+
+      <!-- Attachments upload -->
+      <p-divider />
+      <label class="field-label">Attachments ({{ pendingFiles().length }})</label>
+      <div class="drop-zone"
+           [class.drag-over]="isDragOver()"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave($event)"
+           (drop)="onFileDrop($event)">
+        <i class="pi pi-cloud-upload"></i>
+        <span class="drop-text">Drag &amp; drop files here</span>
+        <span class="drop-or">or</span>
+        <p-button icon="pi pi-folder-open" label="Browse" [outlined]="true"
+                  severity="success" size="small" (onClick)="triggerFileInput()" />
+        <span class="drop-hint">Max 20 MB &bull; .pdf .doc .docx .xls .xlsx .jpg .jpeg .png</span>
+      </div>
+
+      @if (pendingFiles().length > 0) {
+        <div class="wizard-file-list">
+          @for (f of pendingFiles(); track f.name; let i = $index) {
+            <div class="wizard-file-item">
+              <i [class]="getFileIcon(f.name)"></i>
+              <div class="wizard-file-info">
+                <span class="wizard-file-name">{{ f.name }}</span>
+                <span class="wizard-file-size">{{ f.size }}</span>
+              </div>
+              <p-button icon="pi pi-times" [rounded]="true" [text]="true"
+                        severity="danger" (onClick)="removeFile(i, $event)" />
+            </div>
+          }
+        </div>
+      }
 
       <p-divider />
       <div class="review-box">
@@ -348,6 +472,7 @@
         <div class="review-row"><span class="review-label">Priority</span><span>{{ newPriority() }}</span></div>
         <div class="review-row"><span class="review-label">Due</span>
           <span>{{ newDueDate ? (newDueDate | date:'dd MMM yyyy') : '—' }}</span></div>
+        <div class="review-row"><span class="review-label">Attachments</span><span>{{ pendingFiles().length }}</span></div>
       </div>
     </div>
   }

@@ -311,3 +311,192 @@
   display: flex;
   align-items: center;
 }
+
+/* ── Wizard drag-drop zone ───────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--p-surface-400);
+  border-radius: var(--p-border-radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  &.drag-over {
+    border-color: var(--p-primary-color);
+    background: color-mix(in srgb, var(--p-primary-color) 5%, transparent);
+  }
+
+  .pi-cloud-upload { font-size: 2rem; color: var(--p-text-muted-color); }
+  .drop-text       { font-size: 0.9rem; font-weight: 500; }
+  .drop-or         { font-size: 0.8rem; color: var(--p-text-muted-color); }
+  .drop-hint       { font-size: 0.72rem; color: var(--p-text-muted-color); text-align: center; }
+}
+
+/* Wizard pending file list */
+.wizard-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.wizard-file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--p-border-radius);
+  background: var(--p-surface-100);
+
+  > i { font-size: 1.1rem; color: var(--p-primary-color); }
+}
+
+.wizard-file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wizard-file-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wizard-file-size {
+  font-size: 0.72rem;
+  color: var(--p-text-muted-color);
+}
+
+/* ── Detail dialog: attachment list ────────────────────────────── */
+.attachments-loading {
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.no-attachments {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem;
+  border-radius: var(--p-border-radius);
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-surface-200);
+
+  > i { font-size: 1.1rem; color: var(--p-primary-color); flex-shrink: 0; }
+}
+
+.attachment-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  &.clickable { cursor: pointer; &:hover .attachment-name { text-decoration: underline; } }
+}
+
+.attachment-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attachment-size {
+  font-size: 0.72rem;
+  color: var(--p-text-muted-color);
+}
+
+.attachment-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  flex-shrink: 0;
+}
+
+/* ── Preview drawer ──────────────────────────────────────────────── */
+.preview-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  overflow: hidden;
+
+  i { font-size: 1.1rem; color: var(--p-primary-color); flex-shrink: 0; }
+  span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+.preview-drawer-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 1rem;
+}
+
+.preview-spinner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--p-text-muted-color);
+}
+
+.preview-iframe {
+  flex: 1;
+  width: 100%;
+  min-height: 60vh;
+  border: none;
+  border-radius: var(--p-border-radius);
+}
+
+.preview-image {
+  max-width: 100%;
+  border-radius: var(--p-border-radius);
+  object-fit: contain;
+}
+
+.preview-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--p-text-muted-color);
+}
+
+.preview-drawer-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--p-surface-200);
+}

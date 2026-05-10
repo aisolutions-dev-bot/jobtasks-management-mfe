@@ -8,6 +8,7 @@ import {
   JobTask,
   Status,
   StaffDropdownItem,
+  TaskAttachment,
   UpdateStatusRequest,
 } from '../models/task.model';
 
@@ -60,5 +61,33 @@ export class TaskService {
   /** Staff dropdown for assignor/assignee selects. */
   staff(): Observable<StaffDropdownItem[]> {
     return this.http.get<StaffDropdownItem[]>(`${this.base}/staff`);
+  }
+
+  // ─── Attachments ────────────────────────────────────────────────────
+
+  private readonly attachBase = `${environment.jobTasksBackendUrl}/attachments`;
+
+  /** List attachment metadata for a task */
+  getAttachments(jobTaskId: string): Observable<TaskAttachment[]> {
+    return this.http.get<TaskAttachment[]>(`${this.attachBase}?jobTaskId=${jobTaskId}`);
+  }
+
+  /** Upload a single file (multipart) */
+  uploadAttachment(jobTaskId: string, file: File, entryStaff?: string): Observable<TaskAttachment> {
+    const fd = new FormData();
+    fd.append('file',       file);
+    fd.append('jobTaskId',  jobTaskId);
+    if (entryStaff) fd.append('entryStaff', entryStaff);
+    return this.http.post<TaskAttachment>(`${this.attachBase}/upload`, fd);
+  }
+
+  /** Download attachment as Blob (for inline preview or force-download) */
+  downloadAttachment(attachmentId: number): Observable<Blob> {
+    return this.http.get(`${this.attachBase}/download/${attachmentId}`, { responseType: 'blob' });
+  }
+
+  /** Delete an attachment */
+  deleteAttachment(attachmentId: number): Observable<void> {
+    return this.http.delete<void>(`${this.attachBase}/${attachmentId}`);
   }
 }
