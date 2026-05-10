@@ -176,6 +176,12 @@
 
 .detail-desc { font-size: 0.9rem; line-height: 1.6; color: var(--p-text-color); }
 
+/* Preserve whitespace / newlines / tabs entered during task creation */
+.detail-desc-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* ── Wizard ────────────────────────────────────────────────────────────── */
 .wizard-header { display: flex; flex-direction: column; gap: 0.25rem; }
 
@@ -316,15 +322,16 @@
   align-items: center;
 }
 
-/* ── Wizard drag-drop zone ───────────────────────────────────────── */
+/* ── Wizard drag-drop zone (compact row) ────────────────────────── */
 .drop-zone {
-  border: 2px dashed var(--p-surface-400);
+  border: 1px dashed var(--p-surface-400);
   border-radius: var(--p-border-radius);
-  padding: 1.25rem;
+  padding: 0.5rem 0.75rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
 
@@ -333,10 +340,10 @@
     background: color-mix(in srgb, var(--p-primary-color) 5%, transparent);
   }
 
-  .pi-cloud-upload { font-size: 2rem; color: var(--p-text-muted-color); }
-  .drop-text       { font-size: 0.9rem; font-weight: 500; }
-  .drop-or         { font-size: 0.8rem; color: var(--p-text-muted-color); }
-  .drop-hint       { font-size: 0.72rem; color: var(--p-text-muted-color); text-align: center; }
+  .pi-cloud-upload { font-size: 1.1rem; color: var(--p-text-muted-color); }
+  .drop-text       { font-size: 0.82rem; font-weight: 500; }
+  .drop-or         { font-size: 0.78rem; color: var(--p-text-muted-color); }
+  .drop-hint       { font-size: 0.68rem; color: var(--p-text-muted-color); flex-basis: 100%; line-height: 1.2; }
 }
 
 /* Wizard pending file list */

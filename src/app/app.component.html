@@ -218,7 +218,7 @@
     <!-- Description -->
     <div class="detail-section">
       <div class="detail-label">DESCRIPTION</div>
-      <div class="detail-desc">{{ task.taskDescription || '—' }}</div>
+      <div class="detail-desc detail-desc-pre">{{ task.taskDescription || '—' }}</div>
     </div>
 
     <p-divider />
@@ -470,7 +470,7 @@
   @if (wizardStep() === 3) {
     <div class="wizard-body">
       <label class="field-label">Description</label>
-      <textarea pTextarea rows="5"
+      <textarea pTextarea rows="10"
                 [value]="newDesc()"
                 (input)="newDesc.set($any($event.target).value)"
                 placeholder="Describe the task..."
