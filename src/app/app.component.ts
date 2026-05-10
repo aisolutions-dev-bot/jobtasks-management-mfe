@@ -556,10 +556,10 @@ export class AppComponent implements OnInit {
     this.savingDesc.set(true);
     this.taskService.update(task.uniqId, {
       taskTitle:       task.taskTitle,
-      taskType:        task.taskType,
+      taskType:        task.taskType as any,
       taskDescription: this.editDescValue(),
       assigneeStaffId: task.assignee?.staffId,
-      priority:        task.priority,
+      priority:        task.priority as any,
       lastEditStaff:   this.me()?.staffId,
     }).subscribe({
       next: updated => {

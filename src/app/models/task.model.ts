@@ -74,6 +74,16 @@ export interface CreateJobTaskRequest {
   entryStaff?:      string;
 }
 
+export interface UpdateJobTaskRequest {
+  taskTitle?:        string;
+  taskType?:         TaskType;
+  taskDescription?:  string | null;
+  assigneeStaffId?:  string;
+  priority?:         Priority;
+  dueDate?:          string | null;
+  lastEditStaff?:    string;
+}
+
 export interface UpdateStatusRequest {
   jobStatus:      Status;
   lastEditStaff?: string;

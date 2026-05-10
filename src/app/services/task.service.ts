@@ -9,6 +9,7 @@ import {
   Status,
   StaffDropdownItem,
   TaskAttachment,
+  UpdateJobTaskRequest,
   UpdateStatusRequest,
 } from '../models/task.model';
 
@@ -39,7 +40,7 @@ export class TaskService {
     return this.http.post<JobTask>(this.base, req);
   }
 
-  update(id: number, req: Partial<CreateJobTaskRequest>): Observable<JobTask> {
+  update(id: number, req: UpdateJobTaskRequest): Observable<JobTask> {
     return this.http.put<JobTask>(`${this.base}/${id}`, req);
   }
 
