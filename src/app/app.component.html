@@ -143,12 +143,6 @@
     <!-- Status -->
     <div class="detail-section">
       <div class="detail-label">STATUS</div>
-      @if (!isAssigneeOrAssignorOfSelected()) {
-        <div class="status-readonly-note">
-          <i class="pi pi-lock" style="font-size:0.85rem;margin-right:4px"></i>
-          Only the assignor or assignee can change the status.
-        </div>
-      }
       <div class="status-buttons">
         @for (opt of statusOptions; track opt.value) {
           <p-button
@@ -156,11 +150,19 @@
             [outlined]="task.jobStatus !== opt.value"
             [severity]="task.jobStatus === opt.value ? 'success' : 'secondary'"
             size="small"
-            [disabled]="!isAssigneeOrAssignorOfSelected()"
-            (onClick)="isAssigneeOrAssignorOfSelected() && onStatusChange(task, $any(opt.value))"
+            [disabled]="!isStatusAllowed(opt.value)"
+            [pTooltip]="statusButtonTooltip(opt.value)"
+            tooltipPosition="top"
+            (onClick)="onStatusButtonClick(opt.value)"
           />
         }
       </div>
+      @if (!isAssigneeOrAssignorOfSelected()) {
+        <div class="status-readonly-note">
+          <i class="pi pi-lock" style="font-size:0.85rem;margin-right:4px"></i>
+          You are not the assignor or assignee of this task.
+        </div>
+      }
     </div>
 
     <p-divider />
@@ -200,6 +202,14 @@
       <div>
         <div class="detail-label">CREATED</div>
         <div>{{ task.entryDate ? (task.entryDate | date:'dd MMM yyyy') : '—' }}</div>
+      </div>
+      <div>
+        <div class="detail-label">STARTED</div>
+        <div>{{ task.startedDate ? (task.startedDate | date:'dd MMM yyyy') : '—' }}</div>
+      </div>
+      <div>
+        <div class="detail-label">COMPLETED</div>
+        <div>{{ task.completedDate ? (task.completedDate | date:'dd MMM yyyy') : '—' }}</div>
       </div>
     </div>
 
@@ -261,6 +271,40 @@
                 (onClick)="onDeleteTask()" />
     }
   }
+</p-dialog>
+
+<!-- ── DATE INPUT DIALOG ─────────────────────────────────────────────────────── -->
+<p-dialog
+  [(visible)]="showDateDialog"
+  [modal]="true"
+  [closable]="false"
+  [style]="{ width: '380px' }"
+  [header]="pendingStatus() === 'In Progress' ? 'Set Started Date' : 'Set Completion Dates'"
+>
+  <div class="date-dialog-body">
+    @if (dateDialogNeedStart()) {
+      <div class="date-dialog-field">
+        <label class="field-label">Started Date <span class="required">*</span></label>
+        <p-datepicker [(ngModel)]="inputStartedDate" appendTo="body"
+                      dateFormat="dd/mm/yy" [showIcon]="true"
+                      placeholder="Select date" styleClass="w-full" />
+      </div>
+    }
+    @if (dateDialogNeedEnd()) {
+      <div class="date-dialog-field">
+        <label class="field-label">Completed Date <span class="required">*</span></label>
+        <p-datepicker [(ngModel)]="inputCompletedDate" appendTo="body"
+                      dateFormat="dd/mm/yy" [showIcon]="true"
+                      placeholder="Select date" styleClass="w-full" />
+      </div>
+    }
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="date-dialog-footer">
+      <p-button label="Cancel" [outlined]="true" severity="secondary" (onClick)="onDateDialogCancel()" />
+      <p-button label="Confirm" icon="pi pi-check" (onClick)="onDateDialogConfirm()" />
+    </div>
+  </ng-template>
 </p-dialog>
 
 <!-- ── FILE PREVIEW DRAWER ────────────────────────────────────────────────── -->

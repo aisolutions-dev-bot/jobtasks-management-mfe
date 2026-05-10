@@ -49,8 +49,14 @@ export class TaskService {
    * @param jobStatus   - new Status value
    * @param lastEditStaff - the current user's StaffId string
    */
-  updateStatus(id: number, jobStatus: Status, lastEditStaff?: string): Observable<JobTask> {
-    const body: UpdateStatusRequest = { jobStatus, lastEditStaff };
+  updateStatus(
+    id: number,
+    jobStatus: Status,
+    lastEditStaff?: string,
+    startedDate?: string | null,
+    completedDate?: string | null,
+  ): Observable<JobTask> {
+    const body: UpdateStatusRequest = { jobStatus, lastEditStaff, startedDate, completedDate };
     return this.http.patch<JobTask>(`${this.base}/${id}/status`, body);
   }
 

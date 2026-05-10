@@ -59,7 +59,7 @@ export type TaskType =
   | 'Technical Support'    | 'Bug Fix'     | 'Documentation' | 'Other';
 
 export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
-export type Status   = 'Pending' | 'In Progress' | 'On Hold' | 'Completed' | 'Cancelled';
+export type Status   = 'Pending' | 'In Progress' | 'On Hold' | 'Completed' | 'Closed' | 'Cancelled';
 
 export type ViewMode = 'assigned' | 'received' | 'all';
 
@@ -75,8 +75,10 @@ export interface CreateJobTaskRequest {
 }
 
 export interface UpdateStatusRequest {
-  jobStatus:      Status;       // matches backend PATCH body field
+  jobStatus:      Status;
   lastEditStaff?: string;
+  startedDate?:   string | null;   // ISO date YYYY-MM-DD, user-supplied
+  completedDate?: string | null;   // ISO date YYYY-MM-DD, user-supplied
 }
 
 // ─── Attachment ────────────────────────────────────────────────────────────

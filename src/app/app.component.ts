@@ -85,12 +85,21 @@ export class AppComponent implements OnInit {
   // Staff search (Step 2)
   staffSearchQuery = signal('');
 
-  statusOptions = [
-    { label: 'Pending',     value: 'Pending' },
+  statusOptions: { label: string; value: Status }[] = [
+    { label: 'Pending',     value: 'Pending'     },
     { label: 'In Progress', value: 'In Progress' },
-    { label: 'On Hold',     value: 'On Hold' },
-    { label: 'Completed',   value: 'Completed' },
+    { label: 'On Hold',     value: 'On Hold'     },
+    { label: 'Completed',   value: 'Completed'   },
+    { label: 'Closed',      value: 'Closed'      },
   ];
+
+  // ── Date input dialog (for In Progress / Completed) ────────────────────
+  showDateDialog      = signal(false);
+  pendingStatus       = signal<Status | null>(null);
+  dateDialogNeedStart = signal(false);  // must fill Started Date
+  dateDialogNeedEnd   = signal(false);  // must fill Completed Date
+  inputStartedDate:   Date | null = null;
+  inputCompletedDate: Date | null = null;
 
   taskTypes: TaskType[] = [
     'Software Development', 'Job Support', 'System Enquiries',
@@ -400,8 +409,113 @@ export class AppComponent implements OnInit {
     return '45rem';
   }
 
-  onStatusChange(task: JobTask, status: Status) {
-    this.taskService.updateStatus(task.uniqId, status, this.me()?.staffId ?? '').subscribe({
+  // ── Role helpers ─────────────────────────────────────────────────────────
+
+  isAssignorOfSelected(): boolean {
+    const me = this.me(); const task = this.selectedTask();
+    return !!me && !!task && task.assignor?.staffId === me.staffId;
+  }
+
+  isAssigneeOfSelected(): boolean {
+    const me = this.me(); const task = this.selectedTask();
+    return !!me && !!task && task.assignee?.staffId === me.staffId;
+  }
+
+  isAssigneeOrAssignorOfSelected(): boolean {
+    return this.isAssignorOfSelected() || this.isAssigneeOfSelected();
+  }
+
+  /**
+   * Per-button enable rule:
+   *  Pending     → assignor, any time
+   *  On Hold     → assignor only, current must be Pending
+   *  In Progress → assignee only, current must be Pending
+   *  Completed   → assignee only, current must be In Progress
+   *  Closed      → assignor only, current must be Completed
+   */
+  isStatusAllowed(targetStatus: Status): boolean {
+    const task = this.selectedTask(); if (!task) return false;
+    const cur  = task.jobStatus as Status;
+    const isor = this.isAssignorOfSelected();
+    const isee = this.isAssigneeOfSelected();
+    switch (targetStatus) {
+      case 'Pending':     return isor;
+      case 'On Hold':     return isor && cur === 'Pending';
+      case 'In Progress': return isee && cur === 'Pending';
+      case 'Completed':   return isee && cur === 'In Progress';
+      case 'Closed':      return isor && cur === 'Completed';
+      default:            return false;
+    }
+  }
+
+  statusButtonTooltip(targetStatus: Status): string {
+    const task = this.selectedTask(); if (!task) return '';
+    const cur  = task.jobStatus as Status;
+    const isor = this.isAssignorOfSelected();
+    const isee = this.isAssigneeOfSelected();
+    switch (targetStatus) {
+      case 'Pending':     return !isor ? 'Only assignor can reset to Pending' : '';
+      case 'On Hold':     return !isor ? 'Only assignor can put On Hold'
+                               : cur !== 'Pending' ? 'Must be Pending to put On Hold' : '';
+      case 'In Progress': return !isee ? 'Only assignee can start the task'
+                               : cur !== 'Pending' ? 'Must be Pending to start' : '';
+      case 'Completed':   return !isee ? 'Only assignee can complete'
+                               : cur !== 'In Progress' ? 'Must be In Progress to complete' : '';
+      case 'Closed':      return !isor ? 'Only assignor can close'
+                               : cur !== 'Completed' ? 'Must be Completed to close' : '';
+      default: return '';
+    }
+  }
+
+  /** Called from template when a status button is clicked */
+  onStatusButtonClick(targetStatus: Status) {
+    if (!this.isStatusAllowed(targetStatus)) return;
+    const task = this.selectedTask(); if (!task) return;
+
+    if (targetStatus === 'In Progress') {
+      this.pendingStatus.set('In Progress');
+      this.dateDialogNeedStart.set(true);
+      this.dateDialogNeedEnd.set(false);
+      this.inputStartedDate   = task.startedDate ? new Date(task.startedDate as any) : null;
+      this.inputCompletedDate = null;
+      this.showDateDialog.set(true);
+      return;
+    }
+    if (targetStatus === 'Completed') {
+      const needStart = !task.startedDate;
+      this.pendingStatus.set('Completed');
+      this.dateDialogNeedStart.set(needStart);
+      this.dateDialogNeedEnd.set(true);
+      this.inputStartedDate   = task.startedDate ? new Date(task.startedDate as any) : null;
+      this.inputCompletedDate = null;
+      this.showDateDialog.set(true);
+      return;
+    }
+    this.applyStatusChange(targetStatus, null, null);
+  }
+
+  onDateDialogConfirm() {
+    const status = this.pendingStatus(); if (!status) return;
+    if (this.dateDialogNeedStart() && !this.inputStartedDate) {
+      this.msgService.add({ severity: 'warn', summary: 'Started Date required', life: 3000 }); return;
+    }
+    if (this.dateDialogNeedEnd() && !this.inputCompletedDate) {
+      this.msgService.add({ severity: 'warn', summary: 'Completed Date required', life: 3000 }); return;
+    }
+    const toISO = (d: Date | null) => d ? d.toISOString().split('T')[0] : null;
+    this.showDateDialog.set(false);
+    this.applyStatusChange(status, toISO(this.inputStartedDate), toISO(this.inputCompletedDate));
+  }
+
+  onDateDialogCancel() {
+    this.showDateDialog.set(false);
+    this.pendingStatus.set(null);
+    this.inputStartedDate = null; this.inputCompletedDate = null;
+  }
+
+  private applyStatusChange(status: Status, startedDate: string | null, completedDate: string | null) {
+    const task = this.selectedTask(); if (!task) return;
+    this.taskService.updateStatus(task.uniqId, status, this.me()?.staffId ?? '', startedDate, completedDate).subscribe({
       next: updated => {
         this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
         this.selectedTask.set(updated);
@@ -409,25 +523,6 @@ export class AppComponent implements OnInit {
       },
       error: () => this.msgService.add({ severity: 'error', summary: 'Failed to update status', life: 3000 }),
     });
-  }
-
-  // ── Role-based access helpers (for detail dialog) ────────────────────────
-
-  /** Returns true when the current user is the assignor of the selected task */
-  isAssignorOfSelected(): boolean {
-    const me   = this.me();
-    const task = this.selectedTask();
-    if (!me || !task) return false;
-    return task.assignor?.staffId === me.staffId;
-  }
-
-  /** Returns true when the current user is the assignor OR assignee */
-  isAssigneeOrAssignorOfSelected(): boolean {
-    const me   = this.me();
-    const task = this.selectedTask();
-    if (!me || !task) return false;
-    return task.assignor?.staffId === me.staffId ||
-           task.assignee?.staffId === me.staffId;
   }
 
   onDeleteTask() {
@@ -510,6 +605,7 @@ export class AppComponent implements OnInit {
 
   statusSeverity(s: string): 'success' | 'warn' | 'info' | 'secondary' | 'danger' {
     if (s === 'Completed')   return 'success';
+    if (s === 'Closed')      return 'success';
     if (s === 'In Progress') return 'warn';
     if (s === 'On Hold')     return 'secondary';
     if (s === 'Cancelled')   return 'danger';
@@ -517,7 +613,7 @@ export class AppComponent implements OnInit {
   }
 
   isOverdue(task: JobTask): boolean {
-    if (!task.dueDate || task.jobStatus === 'Completed' || task.jobStatus === 'Cancelled') return false;
+    if (!task.dueDate || task.jobStatus === 'Completed' || task.jobStatus === 'Closed' || task.jobStatus === 'Cancelled') return false;
     const now = new Date(); now.setHours(0,0,0,0);
     return new Date(task.dueDate) < now;
   }
