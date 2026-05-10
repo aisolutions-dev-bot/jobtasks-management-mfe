@@ -230,6 +230,25 @@ export class AppComponent implements OnInit {
     });
   }
 
+  // ── Role-based access helpers (for detail dialog) ────────────────────────
+
+  /** Returns true when the current user is the assignor of the selected task */
+  isAssignorOfSelected(): boolean {
+    const me   = this.me();
+    const task = this.selectedTask();
+    if (!me || !task) return false;
+    return task.assignor?.staffId === me.staffId;
+  }
+
+  /** Returns true when the current user is the assignor OR assignee */
+  isAssigneeOrAssignorOfSelected(): boolean {
+    const me   = this.me();
+    const task = this.selectedTask();
+    if (!me || !task) return false;
+    return task.assignor?.staffId === me.staffId ||
+           task.assignee?.staffId === me.staffId;
+  }
+
   onDeleteTask() {
     const task = this.selectedTask();
     if (!task || !confirm('Delete this task?')) return;

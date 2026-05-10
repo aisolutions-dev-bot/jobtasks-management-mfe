@@ -143,6 +143,12 @@
     <!-- Status -->
     <div class="detail-section">
       <div class="detail-label">STATUS</div>
+      @if (!isAssigneeOrAssignorOfSelected()) {
+        <div class="status-readonly-note">
+          <i class="pi pi-lock" style="font-size:0.85rem;margin-right:4px"></i>
+          Only the assignor or assignee can change the status.
+        </div>
+      }
       <div class="status-buttons">
         @for (opt of statusOptions; track opt.value) {
           <p-button
@@ -150,7 +156,8 @@
             [outlined]="task.jobStatus !== opt.value"
             [severity]="task.jobStatus === opt.value ? 'success' : 'secondary'"
             size="small"
-            (onClick)="onStatusChange(task, $any(opt.value))"
+            [disabled]="!isAssigneeOrAssignorOfSelected()"
+            (onClick)="isAssigneeOrAssignorOfSelected() && onStatusChange(task, $any(opt.value))"
           />
         }
       </div>
@@ -206,10 +213,12 @@
 
     <p-divider />
 
-    <!-- Delete -->
-    <p-button label="Delete task" icon="pi pi-trash"
-              severity="danger" [outlined]="true"
-              (onClick)="onDeleteTask()" />
+    <!-- Delete — only the assignor can delete -->
+    @if (isAssignorOfSelected()) {
+      <p-button label="Delete task" icon="pi pi-trash"
+                severity="danger" [outlined]="true"
+                (onClick)="onDeleteTask()" />
+    }
   }
 </p-dialog>
 
