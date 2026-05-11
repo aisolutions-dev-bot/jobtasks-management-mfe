@@ -119,7 +119,7 @@ export class AppComponent implements OnInit {
   // ── Wizard attachments (pending, not yet uploaded) ─────────────────────
   pendingFiles   = signal<{ file: File; name: string; size: string }[]>([]);
   isDragOver     = signal(false);
-  readonly acceptedTypes = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
+  readonly acceptedTypes = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.md';
   readonly maxFileSize   = 20 * 1024 * 1024;
 
   // ── Detail dialog: loaded attachments ────────────────────────────
@@ -691,21 +691,35 @@ export class AppComponent implements OnInit {
     this.taskService.create(req).subscribe({
       next: created => {
         this.tasks.update(list => [created, ...list]);
+        const filesToUpload = this.pendingFiles();
+        this.pendingFiles.set([]);
+
         // Upload any pending attachments now that we have the jobTaskId
-        if (this.pendingFiles().length > 0 && created.jobTaskId) {
-          const uploads = this.pendingFiles().map(pf =>
+        if (filesToUpload.length > 0 && created.jobTaskId) {
+          const uploads = filesToUpload.map(pf =>
             this.taskService.uploadAttachment(created.jobTaskId!, pf.file, me.staffId)
           );
           forkJoin(uploads).subscribe({
-            next:  () => {},
-            error: e  => this.msgService.add({ severity: 'warn', summary: 'Attachments partial', detail: 'Task created but some files failed', life: 4000 }),
+            next: () => {
+              this.showWizard.set(false);
+              this.msgService.add({ severity: 'success', summary: 'Task created!', detail: `${filesToUpload.length} file(s) uploaded`, life: 2000 });
+            },
+            error: () => {
+              // Task was saved — only attachment upload failed; close wizard and warn
+              this.showWizard.set(false);
+              this.msgService.add({ severity: 'warn', summary: 'Task created', detail: 'Some attachments failed to upload', life: 4000 });
+            },
           });
+        } else {
+          // No attachments — close immediately
+          this.showWizard.set(false);
+          this.msgService.add({ severity: 'success', summary: 'Task created!', life: 2000 });
         }
-        this.pendingFiles.set([]);
-        this.showWizard.set(false);
-        this.msgService.add({ severity: 'success', summary: 'Task created!', life: 2000 });
       },
-      error: () => this.msgService.add({ severity: 'error', summary: 'Failed to create task', life: 3000 }),
+      error: () => {
+        // Task creation failed — keep wizard open so user can retry
+        this.msgService.add({ severity: 'error', summary: 'Failed to create task', life: 3000 });
+      },
     });
   }
 
