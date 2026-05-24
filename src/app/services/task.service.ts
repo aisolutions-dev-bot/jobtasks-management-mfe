@@ -6,10 +6,13 @@ import { environment }           from '../../environments/environment';
 import {
   CreateJobTaskRequest,
   JobTask,
+  ReassignRequest,
+  RescheduleRequest,
   Status,
   StaffDropdownItem,
   TaskAttachment,
   UpdateJobTaskRequest,
+  UpdateProgressRemarksRequest,
   UpdateStatusRequest,
 } from '../models/task.model';
 
@@ -59,6 +62,18 @@ export class TaskService {
   ): Observable<JobTask> {
     const body: UpdateStatusRequest = { jobStatus, lastEditStaff, startedDate, completedDate };
     return this.http.patch<JobTask>(`${this.base}/${id}/status`, body);
+  }
+
+  reassign(id: number, req: ReassignRequest): Observable<JobTask> {
+    return this.http.patch<JobTask>(`${this.base}/${id}/reassign`, req);
+  }
+
+  reschedule(id: number, req: RescheduleRequest): Observable<JobTask> {
+    return this.http.patch<JobTask>(`${this.base}/${id}/reschedule`, req);
+  }
+
+  updateProgressRemarks(id: number, req: UpdateProgressRemarksRequest): Observable<JobTask> {
+    return this.http.patch<JobTask>(`${this.base}/${id}/progress-remarks`, req);
   }
 
   delete(id: number): Observable<void> {

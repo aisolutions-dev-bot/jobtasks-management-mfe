@@ -582,3 +582,74 @@
   padding-top: 0.5rem;
   border-top: 1px solid var(--p-surface-200);
 }
+
+/* -- Reschedule dialog ---------------------------------------------------- */
+.reschedule-current {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.reschedule-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.reschedule-days-label {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--p-primary-color);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  &.past {
+    color: var(--p-orange-500);
+  }
+}
+
+.reschedule-warning {
+  background: var(--p-orange-50);
+  border: 1px solid var(--p-orange-200);
+  border-radius: var(--p-border-radius);
+  color: var(--p-orange-700);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.due-value-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.due-edit-icon {
+  font-size: 0.72rem;
+  color: var(--p-text-muted-color);
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--p-primary-color);
+  }
+}
+
+/* -- Status filter multiselect -------------------------------------------- */
+::ng-deep .status-filter {
+  min-width: 180px;
+  max-width: 220px;
+  font-size: 0.875rem;
+}

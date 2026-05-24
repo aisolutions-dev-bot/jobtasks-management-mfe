@@ -16,10 +16,11 @@ import { TextareaModule } from 'primeng/textarea';
 import { SkeletonModule } from 'primeng/skeleton';
 import { DrawerModule } from 'primeng/drawer';
 import { TooltipModule } from 'primeng/tooltip';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 
-import { JobTask, Staff, Status, TaskType, Priority, CreateJobTaskRequest, TaskAttachment } from './models/task.model';
+import { JobTask, Staff, Status, TaskType, Priority, CreateJobTaskRequest, TaskAttachment, UpdateProgressRemarksRequest, ReassignRequest, RescheduleRequest } from './models/task.model';
 import { IAuthService } from './models/auth';
 import { TaskService } from './services/task.service';
 import { StaffService } from './services/staff.service';
@@ -32,7 +33,7 @@ import { StaffService } from './services/staff.service';
     CardModule, ButtonModule, InputTextModule, TagModule, BadgeModule,
     DialogModule, ToastModule, AvatarModule,
     DividerModule, DatePickerModule, TextareaModule, SkeletonModule,
-    DrawerModule, TooltipModule,
+    DrawerModule, TooltipModule, MultiSelectModule,
   ],
   providers: [MessageService],
   templateUrl: './app.component.html',
@@ -53,8 +54,18 @@ export class AppComponent implements OnInit {
   staff        = signal<Staff[]>([]);
   tasks        = signal<JobTask[]>([]);
   me           = signal<Staff | null>(null);
-  activeView   = signal<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
-  searchQuery  = signal('');
+  activeView      = signal<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
+  searchQuery     = signal('');
+  selectedStatuses = signal<Status[]>(['Pending', 'In Progress', 'On Hold', 'Completed', 'Cancelled']);
+
+  readonly statusFilterOptions: { label: string; value: Status }[] = [
+    { label: 'Pending',     value: 'Pending'     },
+    { label: 'In Progress', value: 'In Progress' },
+    { label: 'On Hold',     value: 'On Hold'      },
+    { label: 'Completed',   value: 'Completed'   },
+    { label: 'Closed',      value: 'Closed'      },
+    { label: 'Cancelled',   value: 'Cancelled'   },
+  ];
   loading      = signal(false);
   accessDenied = signal(false);   // true when a2401 = 0
   rbacLoading  = signal(true);    // true while checking RBAC
@@ -139,6 +150,35 @@ export class AppComponent implements OnInit {
   editDescValue = signal('');
   savingDesc    = signal(false);
 
+  // ── Reassign dialog (assignor only) ───────────────────────────────
+  showReassignDialog    = signal(false);
+  reassignSearchQuery   = signal('');
+  selectedNewAssignee   = signal<Staff | null>(null);
+  reassigning           = signal(false);
+
+  filteredReassignStaff = computed(() => {
+    const q    = this.reassignSearchQuery().toLowerCase().trim();
+    const me   = this.me();
+    const task = this.selectedTask();
+    const list = this.staff().filter(s =>
+      s.staffId !== task?.assignee?.staffId
+    );
+    if (!q) return list;
+    return list.filter(s =>
+      s.name.toLowerCase().includes(q) || s.staffId.toLowerCase().includes(q)
+    );
+  });
+
+  // ── Reschedule dialog (assignor only) ─────────────────────────────
+  showRescheduleDialog  = signal(false);
+  newScheduleDate: Date | null = null;
+  rescheduling          = signal(false);
+
+  // ── Progress remarks (assignee only) ──────────────────────────────
+  editingProgressRemarks   = signal(false);
+  editProgressRemarksValue = signal('');
+  savingProgressRemarks    = signal(false);
+
   // ── Detail screen upload (assignor + assignee) ───────────────────
   detailPendingFiles = signal<{ file: File; name: string; size: string }[]>([]);
   detailIsDragOver   = signal(false);
@@ -151,14 +191,17 @@ export class AppComponent implements OnInit {
   // ── Computed ───────────────────────────────────────────────────────────────
   filteredTasks = computed(() => {
     let list = this.tasks();
-    const q  = this.searchQuery().toLowerCase().trim();
-    const me = this.me();
-    const v  = this.activeView();
+    const q        = this.searchQuery().toLowerCase().trim();
+    const me       = this.me();
+    const v        = this.activeView();
+    const statuses = this.selectedStatuses();
 
     if (v === 'ASSIGNED_BY_ME' && me)
       list = list.filter(t => t.assignor?.staffId === me.staffId);
     if (v === 'ASSIGNED_TO_ME' && me)
       list = list.filter(t => t.assignee?.staffId === me.staffId);
+    if (statuses.length > 0)
+      list = list.filter(t => statuses.includes(t.jobStatus as Status));
     if (q) list = list.filter(t =>
       t.taskTitle.toLowerCase().includes(q) ||
       t.jobTaskId?.toLowerCase().includes(q) ||
@@ -262,6 +305,9 @@ export class AppComponent implements OnInit {
     this.selectedTask.set(task);
     this.attachments.set([]);
     this.editingDesc.set(false);
+    this.editingProgressRemarks.set(false);
+    this.showReassignDialog.set(false);
+    this.showRescheduleDialog.set(false);
     this.detailPendingFiles.set([]);
     this.showDetail.set(true);
     if (task.jobTaskId) {
@@ -274,6 +320,94 @@ export class AppComponent implements OnInit {
     this.taskService.getAttachments(jobTaskId).subscribe({
       next:  list => { this.attachments.set(list); this.attachmentsLoading.set(false); },
       error: e    => { console.error('loadAttachments error', e); this.attachmentsLoading.set(false); },
+    });
+  }
+
+  // ── Reassign ──────────────────────────────────────────────────────
+
+  openReassignDialog() {
+    this.reassignSearchQuery.set('');
+    this.selectedNewAssignee.set(null);
+    this.showReassignDialog.set(true);
+  }
+
+  confirmReassign() {
+    const task    = this.selectedTask();
+    const newStaff = this.selectedNewAssignee();
+    if (!task || !newStaff) return;
+    this.reassigning.set(true);
+    const req: ReassignRequest = {
+      newAssigneeStaffId: newStaff.staffId,
+      lastEditStaff:      this.me()?.staffId,
+    };
+    this.taskService.reassign(task.uniqId, req).subscribe({
+      next: updated => {
+        this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
+        this.selectedTask.set(updated);
+        this.showReassignDialog.set(false);
+        this.reassigning.set(false);
+        this.msgService.add({ severity: 'success', summary: 'Task reassigned', life: 2000 });
+      },
+      error: () => {
+        this.reassigning.set(false);
+        this.msgService.add({ severity: 'error', summary: 'Failed to reassign task', life: 3000 });
+      },
+    });
+  }
+
+  // ── Reschedule ────────────────────────────────────────────────────
+
+  openRescheduleDialog() {
+    const task = this.selectedTask();
+    this.newScheduleDate = task?.dueDate ? new Date(task.dueDate) : null;
+    this.showRescheduleDialog.set(true);
+  }
+
+  setSchedulePreset(days: number) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    this.newScheduleDate = d;
+  }
+
+  getDaysLabel(date: Date | null): string {
+    if (!date) return '';
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const d   = new Date(date); d.setHours(0, 0, 0, 0);
+    const diff = Math.round((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff === 0)  return 'today';
+    if (diff === 1)  return 'tomorrow';
+    if (diff === -1) return 'yesterday';
+    if (diff > 0)    return `in ${diff} days`;
+    return `${Math.abs(diff)} days overdue`;
+  }
+
+  isScheduleDatePast(): boolean {
+    if (!this.newScheduleDate) return false;
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const d   = new Date(this.newScheduleDate); d.setHours(0, 0, 0, 0);
+    return d < now;
+  }
+
+  confirmReschedule() {
+    const task = this.selectedTask();
+    if (!task) return;
+    this.rescheduling.set(true);
+    const req: RescheduleRequest = {
+      newDueDate:    this.toLocalDateStr(this.newScheduleDate),
+      lastEditStaff: this.me()?.staffId,
+    };
+    this.taskService.reschedule(task.uniqId, req).subscribe({
+      next: updated => {
+        this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
+        this.selectedTask.set(updated);
+        this.showRescheduleDialog.set(false);
+        this.rescheduling.set(false);
+        this.msgService.add({ severity: 'success', summary: 'Task rescheduled', life: 2000 });
+      },
+      error: () => {
+        this.rescheduling.set(false);
+        this.msgService.add({ severity: 'error', summary: 'Failed to reschedule task', life: 3000 });
+      },
     });
   }
 
@@ -514,7 +648,7 @@ export class AppComponent implements OnInit {
     if (this.dateDialogNeedEnd() && !this.inputCompletedDate) {
       this.msgService.add({ severity: 'warn', summary: 'Completed Date required', life: 3000 }); return;
     }
-    const toISO = (d: Date | null) => d ? d.toISOString().split('T')[0] : null;
+    const toISO = (d: Date | null) => this.toLocalDateStr(d);
     this.showDateDialog.set(false);
     this.applyStatusChange(status, toISO(this.inputStartedDate), toISO(this.inputCompletedDate));
   }
@@ -550,6 +684,42 @@ export class AppComponent implements OnInit {
     this.editingDesc.set(false);
   }
 
+  // ── Progress remarks ──────────────────────────────────────────────
+
+  startEditProgressRemarks() {
+    const task = this.selectedTask();
+    if (!task) return;
+    this.editProgressRemarksValue.set(task.progressRemarks ?? '');
+    this.editingProgressRemarks.set(true);
+  }
+
+  cancelEditProgressRemarks() {
+    this.editingProgressRemarks.set(false);
+  }
+
+  saveProgressRemarks() {
+    const task = this.selectedTask();
+    if (!task) return;
+    this.savingProgressRemarks.set(true);
+    const req: UpdateProgressRemarksRequest = {
+      progressRemarks: this.editProgressRemarksValue() || null,
+      lastEditStaff:   this.me()?.staffId,
+    };
+    this.taskService.updateProgressRemarks(task.uniqId, req).subscribe({
+      next: updated => {
+        this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
+        this.selectedTask.set(updated);
+        this.editingProgressRemarks.set(false);
+        this.savingProgressRemarks.set(false);
+        this.msgService.add({ severity: 'success', summary: 'Progress remarks saved', life: 2000 });
+      },
+      error: () => {
+        this.savingProgressRemarks.set(false);
+        this.msgService.add({ severity: 'error', summary: 'Failed to save remarks', life: 3000 });
+      },
+    });
+  }
+
   saveDesc() {
     const task = this.selectedTask();
     if (!task) return;
@@ -560,6 +730,7 @@ export class AppComponent implements OnInit {
       taskDescription: this.editDescValue(),
       assigneeStaffId: task.assignee?.staffId,
       priority:        task.priority as any,
+      dueDate:         task.dueDate ? task.dueDate.split('T')[0] : null,
       lastEditStaff:   this.me()?.staffId,
     }).subscribe({
       next: updated => {
@@ -684,7 +855,7 @@ export class AppComponent implements OnInit {
       assignorStaffId: me.staffId,
       assigneeStaffId: assignee.staffId,
       priority:        this.newPriority(),
-      dueDate:         this.newDueDate ? this.newDueDate.toISOString().split('T')[0] : null,
+      dueDate:         this.toLocalDateStr(this.newDueDate),
       entryStaff:      me.staffId,
     };
 
@@ -745,6 +916,15 @@ export class AppComponent implements OnInit {
     if (!task.dueDate || task.jobStatus === 'Completed' || task.jobStatus === 'Closed' || task.jobStatus === 'Cancelled') return false;
     const now = new Date(); now.setHours(0,0,0,0);
     return new Date(task.dueDate) < now;
+  }
+
+  /** Formats a Date using local timezone — avoids UTC shift from toISOString() */
+  toLocalDateStr(d: Date | null): string | null {
+    if (!d) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   initials(name: string | null | undefined): string {

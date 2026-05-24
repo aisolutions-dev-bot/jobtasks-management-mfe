@@ -45,6 +45,7 @@ export interface JobTask {
   estimatedHours:   number | null;
   actualHours:      number | null;
   remarks:          string | null;
+  progressRemarks:  string | null;
   attachmentPath:   string | null;
   entryStaff:       string | null;
   entryDate:        string | null;
@@ -108,6 +109,21 @@ export interface TaskAttachment {
   uploadSource:  string;
   entryStaff?:   string;
   entryDate?:    string;
+}
+
+export interface ReassignRequest {
+  newAssigneeStaffId: string;
+  lastEditStaff?:     string;
+}
+
+export interface RescheduleRequest {
+  newDueDate:     string | null;
+  lastEditStaff?: string;
+}
+
+export interface UpdateProgressRemarksRequest {
+  progressRemarks: string | null;
+  lastEditStaff?:  string;
 }
 
 export interface FilterState {
