@@ -51,8 +51,8 @@ export interface JobTask {
   entryDate:        string | null;
   lastEditStaff:    string | null;
   lastEdtiDate:     string | null; // preserved typo from DB column name
-  assignor:         Staff;
-  assignee:         Staff;
+  assignor:         Staff | null;
+  assignee:         Staff | null;
 }
 
 export type TaskType =
