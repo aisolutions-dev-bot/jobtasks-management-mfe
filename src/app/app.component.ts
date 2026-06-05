@@ -248,10 +248,6 @@ export class AppComponent implements OnInit {
   // ── RBAC helpers ──────────────────────────────────────────────────────────
 
   /** Returns groupAuthority of logged-in user for backend RBAC call */
-  private getGroupAuthority(): string | undefined {
-    return this.authService.userRole()?.authorities?.[0] ?? undefined;
-  }
-
   // ── Data loading ──────────────────────────────────────────────────────────
 
   loadStaff(): Promise<void> {
@@ -273,9 +269,7 @@ export class AppComponent implements OnInit {
 
   private loadTasks() {
     this.loading.set(true);
-    const staffCode      = this.me()?.staffId;
-    const groupAuthority = this.getGroupAuthority();
-    this.taskService.list(groupAuthority, staffCode).subscribe({
+    this.taskService.list().subscribe({
       next:  list  => { this.tasks.set(list); this.loading.set(false); },
       error: e     => { console.error('loadTasks error', e); this.loading.set(false); },
     });

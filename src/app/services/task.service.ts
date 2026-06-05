@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject }    from '@angular/core';
 import { Observable }            from 'rxjs';
 
@@ -22,17 +22,8 @@ export class TaskService {
 
   private readonly base = `${environment.jobTasksBackendUrl}/job-tasks`;
 
-  /**
-   * List job tasks with optional RBAC filtering.
-   *
-   * @param groupAuthority - The user's group authority string (e.g. "GRPADMIN")
-   * @param staffCode      - The user's StaffId varchar from m03Staff (e.g. "T6923")
-   */
-  list(groupAuthority?: string, staffCode?: string): Observable<JobTask[]> {
-    let params = new HttpParams();
-    if (groupAuthority) params = params.set('groupAuthority', groupAuthority);
-    if (staffCode)      params = params.set('staffCode', staffCode);
-    return this.http.get<JobTask[]>(this.base, { params });
+  list(): Observable<JobTask[]> {
+    return this.http.get<JobTask[]>(this.base);
   }
 
   get(id: number): Observable<JobTask> {
