@@ -216,7 +216,7 @@ export class AppComponent implements OnInit {
       active:    all.filter(t => t.jobStatus === 'In Progress' || t.jobStatus === 'Pending').length,
       completed: all.filter(t => t.jobStatus === 'Completed').length,
       overdue:   all.filter(t =>
-        t.jobStatus !== 'Completed' && t.jobStatus !== 'Cancelled' &&
+        t.jobStatus !== 'Completed' && t.jobStatus !== 'Closed' && t.jobStatus !== 'Cancelled' &&
         t.dueDate != null && new Date(t.dueDate) < now).length,
       total:     all.length,
     };
