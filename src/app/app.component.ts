@@ -241,7 +241,8 @@ export class AppComponent implements OnInit {
     }
 
     this.rbacLoading.set(false);
-    await this.loadStaff();
+    // Fire both requests concurrently
+    this.loadStaff();
     this.loadTasks();
   }
 
