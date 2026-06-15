@@ -159,7 +159,7 @@
           <p-button
             [label]="opt.label"
             [outlined]="task.jobStatus !== opt.value"
-            [severity]="task.jobStatus === opt.value ? 'success' : 'secondary'"
+            [severity]="task.jobStatus === opt.value ? (opt.value === 'Cancelled' ? 'danger' : 'success') : 'secondary'"
             size="small"
             [disabled]="!isStatusAllowed(opt.value)"
             [pTooltip]="statusButtonTooltip(opt.value)"

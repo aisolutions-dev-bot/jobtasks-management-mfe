@@ -102,6 +102,7 @@ export class AppComponent implements OnInit {
     { label: 'On Hold',     value: 'On Hold'     },
     { label: 'Completed',   value: 'Completed'   },
     { label: 'Closed',      value: 'Closed'      },
+    { label: 'Cancelled',   value: 'Cancelled'   },
   ];
 
   // ── Date input dialog (for In Progress / Completed) ────────────────────
@@ -573,6 +574,7 @@ export class AppComponent implements OnInit {
    *  In Progress → assignee only, current must be Pending
    *  Completed   → assignee only, current must be In Progress
    *  Closed      → assignor only, current must be Completed
+   *  Cancelled   → assignor only, current must be active (Pending / In Progress / On Hold)
    */
   isStatusAllowed(targetStatus: Status): boolean {
     const task = this.selectedTask(); if (!task) return false;
@@ -585,6 +587,7 @@ export class AppComponent implements OnInit {
       case 'In Progress': return isee && cur === 'Pending';
       case 'Completed':   return isee && cur === 'In Progress';
       case 'Closed':      return isor && cur === 'Completed';
+      case 'Cancelled':   return isor && (cur === 'Pending' || cur === 'In Progress' || cur === 'On Hold');
       default:            return false;
     }
   }
@@ -604,6 +607,9 @@ export class AppComponent implements OnInit {
                                : cur !== 'In Progress' ? 'Must be In Progress to complete' : '';
       case 'Closed':      return !isor ? 'Only assignor can close'
                                : cur !== 'Completed' ? 'Must be Completed to close' : '';
+      case 'Cancelled':   return !isor ? 'Only assignor can cancel'
+                               : (cur === 'Completed' || cur === 'Closed' || cur === 'Cancelled')
+                                   ? 'Cannot cancel a completed or closed task' : '';
       default: return '';
     }
   }
