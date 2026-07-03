@@ -46,7 +46,24 @@
                 }
               ],
               "outputHashing": "all",
-              "extraWebpackConfig": "webpack.config.js"
+              "extraWebpackConfig": "webpack.prod.config.js"
+            },
+            "staging": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.staging.ts"
+                }
+              ],
+              "outputHashing": "all",
+              "extraWebpackConfig": "webpack.prod.config.js",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                }
+              ]
             },
             "development": {
               "optimization": false,

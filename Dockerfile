@@ -14,8 +14,14 @@ RUN pnpm install --frozen-lockfile
 # Copy rest of the source code
 COPY . .
 
-# Build Angular app
-RUN pnpm run build
+ARG GIT_BRANCH=$GIT_BRANCH
+
+# Build Angular app for production or staging
+RUN if [ "$GIT_BRANCH" = "staging" ]; then \
+    pnpm run build:staging; \
+    else \
+    pnpm run build:prod; \
+    fi
 
 # Stage 2: Serve with nginx
 
