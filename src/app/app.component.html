@@ -53,7 +53,7 @@
   <div class="toolbar-actions">
     <span class="p-input-icon-left search-wrap">
       <i class="pi pi-search"></i>
-      <input pInputText type="text" placeholder="Search tasks..."
+      <input pInputText type="text" placeholder="Search tasks or assignee..."
              [value]="searchQuery()"
              (input)="searchQuery.set($any($event.target).value)" />
     </span>

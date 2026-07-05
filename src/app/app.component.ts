@@ -56,7 +56,7 @@ export class AppComponent implements OnInit {
   me           = signal<Staff | null>(null);
   activeView      = signal<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
   searchQuery     = signal('');
-  selectedStatuses = signal<Status[]>(['Pending', 'In Progress', 'On Hold', 'Completed', 'Cancelled']);
+  selectedStatuses = signal<Status[]>(['Pending', 'In Progress']);
 
   readonly statusFilterOptions: { label: string; value: Status }[] = [
     { label: 'Pending',     value: 'Pending'     },
@@ -206,7 +206,9 @@ export class AppComponent implements OnInit {
     if (q) list = list.filter(t =>
       t.taskTitle.toLowerCase().includes(q) ||
       t.jobTaskId?.toLowerCase().includes(q) ||
-      (t.taskDescription ?? '').toLowerCase().includes(q));
+      (t.taskDescription ?? '').toLowerCase().includes(q) ||
+      (t.assignee?.name ?? '').toLowerCase().includes(q) ||
+      (t.assignee?.staffId ?? '').toLowerCase().includes(q));
     return list;
   });
 
