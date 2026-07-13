@@ -15,7 +15,13 @@
           "options": {
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": [],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public",
+                "output": "."
+              }
+            ],
             "styles": [
               "src/styles.scss"
             ],
