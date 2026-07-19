@@ -47,6 +47,7 @@ export interface JobTask {
   remarks:          string | null;
   progressRemarks:  string | null;
   attachmentPath:   string | null;
+  releaseId:        string | null;  // m24JobTasks.ReleaseId — set once task is bundled into a Task Release
   entryStaff:       string | null;
   entryDate:        string | null;
   lastEditStaff:    string | null;
@@ -60,7 +61,7 @@ export type TaskType =
   | 'Technical Support'    | 'Bug Fix'     | 'Documentation' | 'Other';
 
 export type Priority = 'Low' | 'Medium' | 'High' | 'Urgent';
-export type Status   = 'Pending' | 'In Progress' | 'On Hold' | 'Completed' | 'Closed' | 'Cancelled';
+export type Status   = 'Pending' | 'In Progress' | 'On Hold' | 'Completed' | 'Tested' | 'Closed' | 'Cancelled';
 
 export type ViewMode = 'assigned' | 'received' | 'all';
 
@@ -131,4 +132,28 @@ export interface FilterState {
   status:   Status | 'all';
   type:     TaskType | 'all';
   priority: Priority | 'all';
+}
+
+// ─── Task Release ──────────────────────────────────────────────────────────
+
+export interface TaskRelease {
+  uniqId:         number;
+  releaseId:      string;
+  releaseDate:    string;
+  releaseVersion: string;
+  releaseRemarks: string | null;
+  entryStaff:     string | null;
+  entryDate:      string | null;
+  lastEditStaff:  string | null;
+  lastEditDate:   string | null;
+  taskCount:      number;
+}
+
+export interface CreateTaskReleaseRequest {
+  releaseId:      string;
+  releaseDate:    string;       // ISO date YYYY-MM-DD
+  releaseVersion: string;
+  releaseRemarks?: string;
+  entryStaff?:    string;
+  jobTaskIds:     number[];     // m24JobTasks.UniqID values
 }

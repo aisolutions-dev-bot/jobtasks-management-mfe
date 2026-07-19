@@ -8,6 +8,8 @@ module.exports = withModuleFederationPlugin({
 
   exposes: {
     './JobTasksApp': './src/app/app.component.ts',
+    './TaskReleaseComponent': './src/app/task-release-component/task-release-component.ts',
+    './TaskReleaseAddComponent': './src/app/task-release-component/task-release-add-component/task-release-add-component.ts',
   },
 
   shared: {

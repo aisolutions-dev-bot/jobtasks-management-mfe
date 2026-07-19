@@ -1,0 +1,57 @@
+<div class="task-release-page">
+  <p-card>
+    <div class="release-toolbar">
+      <h2 class="release-title">Task Release</h2>
+      @if (canAdd()) {
+        <p-button
+          label="Add New"
+          icon="pi pi-plus"
+          routerLink="/job-tasks/release/add"
+        />
+      }
+    </div>
+
+    @if (loadingState() === 'loading') {
+      <div class="release-skeleton">
+        @for (i of [1,2,3]; track i) {
+          <p-skeleton height="2.5rem" styleClass="release-skeleton-row" />
+        }
+      </div>
+    } @else if (loadingState() === 'error') {
+      <div class="release-empty">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>Failed to load task releases.</p>
+      </div>
+    } @else if (releases().length === 0) {
+      <div class="release-empty">
+        <i class="pi pi-inbox"></i>
+        <p>No task releases yet.</p>
+      </div>
+    } @else {
+      <p-table [value]="releases()" [rowHover]="true" dataKey="uniqId">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Release ID</th>
+            <th>Release Version</th>
+            <th>Release Date</th>
+            <th>Task Count</th>
+            <th>Release Remarks</th>
+            <th>Entry Staff</th>
+            <th>Entry Date</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-release>
+          <tr>
+            <td>{{ release.releaseId }}</td>
+            <td>{{ release.releaseVersion }}</td>
+            <td>{{ release.releaseDate | date:'dd/MM/yyyy' }}</td>
+            <td>{{ release.taskCount }}</td>
+            <td>{{ release.releaseRemarks || '-' }}</td>
+            <td>{{ release.entryStaff || '-' }}</td>
+            <td>{{ release.entryDate | date:'dd/MM/yyyy' }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </p-card>
+</div>
