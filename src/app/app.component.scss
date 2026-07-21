@@ -649,7 +649,32 @@
 
 /* -- Status filter multiselect -------------------------------------------- */
 ::ng-deep .status-filter {
-  min-width: 180px;
-  max-width: 220px;
+  min-width: 280px;
+  max-width: 360px;
   font-size: 0.875rem;
+}
+
+/* -- Un-clip the status dropdown overlay ----------------------------------
+   The shell's global _primeng.scss pins .p-multiselect-overlay to the
+   trigger's width and truncates option text with ellipsis. That's shell-wide
+   and out of scope to change here, so this overrides it locally for just
+   this one dropdown via panelStyleClass="jobtask-status-overlay" — higher
+   specificity (two classes) wins over the shell's single-class rule. */
+::ng-deep .jobtask-status-overlay {
+  &.p-multiselect-overlay {
+    width: auto !important;
+    min-width: max-content !important;
+    overflow: visible !important;
+  }
+
+  .p-multiselect-list-container {
+    contain: none !important;
+    overflow-x: visible !important;
+  }
+
+  .p-multiselect-option {
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: nowrap !important;
+  }
 }

@@ -1,0 +1,131 @@
+<div class="task-release-view-wrapper">
+  <p-toast />
+  <p-confirmDialog />
+
+  @if (loadingState() === LoadingState.Loading) {
+    <div class="spinner-wrapper">
+      <p-progressSpinner strokeWidth="4" fill="transparent" />
+    </div>
+  }
+
+  @else if (loadingState() === LoadingState.Error) {
+    <div class="error-state">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>Failed to load task release.</span>
+      <p-button label="Back" icon="pi pi-arrow-left" routerLink="/job-tasks/release" severity="secondary" />
+    </div>
+  }
+
+  @else if (loadingState() === LoadingState.Success && detail(); as release) {
+    <div class="detail-toolbar">
+      <div class="toolbar-left">
+        <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" routerLink="/job-tasks/release" />
+        <h2 class="release-title"><i class="pi pi-send"></i> {{ release.releaseId }}</h2>
+      </div>
+      <div class="toolbar-actions">
+        @if (canEdit()) {
+          <p-button
+            icon="pi pi-pencil"
+            label="Edit"
+            severity="primary"
+            [routerLink]="['/job-tasks/release/edit', release.uniqId]"
+          />
+          <p-button
+            icon="pi pi-trash"
+            label="Delete Release"
+            severity="secondary"
+            styleClass="delete-release-btn"
+            (onClick)="confirmDeleteRelease()"
+          />
+        }
+      </div>
+    </div>
+
+    <p-card styleClass="detail-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <i class="pi pi-box"></i>
+            <span>Release Information</span>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="detail-grid">
+        <div class="detail-field"><span class="label">Release ID</span><span class="value">{{ release.releaseId }}</span></div>
+        <div class="detail-field"><span class="label">Release Version</span><span class="value">{{ release.releaseVersion }}</span></div>
+        <div class="detail-field"><span class="label">Release Date</span><span class="value">{{ release.releaseDate | date:'dd/MM/yyyy' }}</span></div>
+        <div class="detail-field"><span class="label">Release Remarks</span><span class="value">{{ release.releaseRemarks || '-' }}</span></div>
+        <div class="detail-field"><span class="label">Entry Staff</span><span class="value">{{ release.entryStaff || '-' }}</span></div>
+        <div class="detail-field"><span class="label">Entry Date</span><span class="value">{{ release.entryDate | date:'dd/MM/yyyy' }}</span></div>
+        <div class="detail-field"><span class="label">Last Edit Staff</span><span class="value">{{ release.lastEditStaff || '-' }}</span></div>
+        <div class="detail-field"><span class="label">Last Edit Date</span><span class="value">{{ release.lastEditDate | date:'dd/MM/yyyy' }}</span></div>
+      </div>
+    </p-card>
+
+    <p-card styleClass="detail-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-bar">
+          <div class="card-title">
+            <i class="pi pi-list"></i>
+            <span>Job Tasks in this Release</span>
+            @if (jobTasks().length) {
+              <span class="count-chip">{{ jobTasks().length }}</span>
+            }
+          </div>
+          @if (canEdit()) {
+            <p-button
+              icon="pi pi-plus"
+              label="Add Tasks"
+              severity="primary"
+              [routerLink]="['/job-tasks/release/view', release.uniqId, 'add-tasks']"
+            />
+          }
+        </div>
+      </ng-template>
+
+      @if (jobTasks().length === 0) {
+        <div class="release-empty">
+          <i class="pi pi-inbox"></i>
+          <p>No job tasks in this release yet.</p>
+        </div>
+      } @else {
+        <p-table [value]="jobTasks()" [rowHover]="true" dataKey="uniqId">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Job Task ID</th>
+              <th>Task Title</th>
+              <th>Assignee</th>
+              <th>Status</th>
+              <th>Due Date</th>
+              @if (canEdit()) {
+                <th style="width: 6rem">Actions</th>
+              }
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-task>
+            <tr>
+              <td>{{ task.jobTaskId }}</td>
+              <td>{{ task.taskTitle }}</td>
+              <td>{{ task.assignee?.name || '-' }}</td>
+              <td>{{ task.jobStatus }}</td>
+              <td>{{ task.dueDate | date:'dd/MM/yyyy' }}</td>
+              @if (canEdit()) {
+                <td>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    pTooltip="Remove from release"
+                    (onClick)="confirmRemoveTask(task)"
+                  />
+                </td>
+              }
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </p-card>
+  }
+</div>

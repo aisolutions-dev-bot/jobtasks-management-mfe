@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 
@@ -13,19 +13,21 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageService } from 'primeng/api';
 
-import { CreateTaskReleaseRequest, JobTask, Status } from '../../models/task.model';
-import { IAuthService } from '../../models/auth';
-import { TaskReleaseService } from '../../services/task-release.service';
+import { CreateTaskReleaseRequest, JobTask, Status } from '../../../models/task.model';
+import { IAuthService } from '../../../models/auth';
+import { TaskReleaseService } from '../../../services/task-release.service';
 
 @Component({
   selector: 'app-task-release-add',
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, RouterLink,
     CardModule, ButtonModule, InputTextModule, TextareaModule,
     DatePickerModule, MultiSelectModule, TableModule, ToastModule,
+    ProgressSpinnerModule,
   ],
   providers: [MessageService],
   templateUrl: './task-release-add-component.html',

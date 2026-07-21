@@ -1,0 +1,12 @@
+<div>
+  <remote-component
+    [remoteEntry]="uiMfeUrl"
+    [exposedModule]="'./TabsRouter'"
+    [exportName]="'TabsRouter'"
+    [inputs]="{
+      tabs: tabs,
+      activeRoute: activeRoute,
+    }"
+    (outputs)="handleTabChange($event)"
+  ></remote-component>
+</div>

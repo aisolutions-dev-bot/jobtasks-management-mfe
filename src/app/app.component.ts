@@ -576,7 +576,7 @@ export class AppComponent implements OnInit {
    *  On Hold     → assignor only, current must be Pending
    *  In Progress → assignee only, current must be Pending
    *  Completed   → assignee only, current must be In Progress
-   *  Tested      → assignee only, current must be Completed
+   *  Tested      → assignor only, current must be Completed (task is handed back to assignor to verify)
    *  Closed      → assignor only, current must be Completed
    *  Cancelled   → assignor only, current must be active (Pending / In Progress / On Hold)
    */
@@ -590,7 +590,7 @@ export class AppComponent implements OnInit {
       case 'On Hold':     return isor && cur === 'Pending';
       case 'In Progress': return isee && cur === 'Pending';
       case 'Completed':   return isee && cur === 'In Progress';
-      case 'Tested':      return isee && cur === 'Completed';
+      case 'Tested':      return isor && cur === 'Completed';
       case 'Closed':      return isor && cur === 'Completed';
       case 'Cancelled':   return isor && (cur === 'Pending' || cur === 'In Progress' || cur === 'On Hold');
       default:            return false;
@@ -610,7 +610,7 @@ export class AppComponent implements OnInit {
                                : cur !== 'Pending' ? 'Must be Pending to start' : '';
       case 'Completed':   return !isee ? 'Only assignee can complete'
                                : cur !== 'In Progress' ? 'Must be In Progress to complete' : '';
-      case 'Tested':      return !isee ? 'Only assignee can mark as tested'
+      case 'Tested':      return !isor ? 'Only assignor can mark as tested'
                                : cur !== 'Completed' ? 'Must be Completed to mark as tested' : '';
       case 'Closed':      return !isor ? 'Only assignor can close'
                                : cur !== 'Completed' ? 'Must be Completed to close' : '';

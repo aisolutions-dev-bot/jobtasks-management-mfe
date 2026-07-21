@@ -1,21 +1,28 @@
 <div class="task-release-page">
-  <p-card>
-    <div class="release-toolbar">
-      <h2 class="release-title">Task Release</h2>
-      @if (canAdd()) {
-        <p-button
-          label="Add New"
-          icon="pi pi-plus"
-          routerLink="/job-tasks/release/add"
-        />
-      }
-    </div>
+  <div class="page-toolbar">
+    <h2 class="page-title"><i class="pi pi-send"></i> Task Release</h2>
+    @if (canAdd()) {
+      <p-button
+        label="Add New"
+        icon="pi pi-plus"
+        routerLink="/job-tasks/release/add"
+      />
+    }
+  </div>
+
+  <p-card styleClass="detail-card">
+    <ng-template pTemplate="header">
+      <div class="card-header-bar">
+        <div class="card-title">
+          <i class="pi pi-list"></i>
+          <span>Task Release List</span>
+        </div>
+      </div>
+    </ng-template>
 
     @if (loadingState() === 'loading') {
-      <div class="release-skeleton">
-        @for (i of [1,2,3]; track i) {
-          <p-skeleton height="2.5rem" styleClass="release-skeleton-row" />
-        }
+      <div class="spinner-wrapper">
+        <p-progressSpinner strokeWidth="4" fill="transparent" />
       </div>
     } @else if (loadingState() === 'error') {
       <div class="release-empty">
@@ -41,7 +48,7 @@
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-release>
-          <tr>
+          <tr class="clickable-row" (click)="goToView(release.uniqId)">
             <td>{{ release.releaseId }}</td>
             <td>{{ release.releaseVersion }}</td>
             <td>{{ release.releaseDate | date:'dd/MM/yyyy' }}</td>

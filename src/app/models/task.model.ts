@@ -157,3 +157,15 @@ export interface CreateTaskReleaseRequest {
   entryStaff?:    string;
   jobTaskIds:     number[];     // m24JobTasks.UniqID values
 }
+
+export interface TaskReleaseDetail extends TaskRelease {
+  jobTasks: JobTask[];
+}
+
+export interface UpdateTaskReleaseRequest {
+  releaseId:      string;
+  releaseDate:    string;       // ISO date YYYY-MM-DD
+  releaseVersion: string;
+  releaseRemarks?: string;
+  lastEditStaff?: string;
+}

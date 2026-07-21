@@ -1,0 +1,114 @@
+<div class="task-release-add-tasks-page">
+  <p-toast />
+
+  <div class="page-toolbar">
+    <div class="toolbar-left">
+      <p-button icon="pi pi-arrow-left" label="Back" severity="secondary" (onClick)="cancel()" />
+      <h2 class="page-title"><i class="pi pi-list-check"></i> Add Job Tasks to Release</h2>
+    </div>
+  </div>
+
+  <p-card styleClass="detail-card">
+    <ng-template pTemplate="header">
+      <div class="card-header-bar">
+        <div class="card-title">
+          <i class="pi pi-list-check"></i>
+          <span>Select Job Tasks</span>
+        </div>
+      </div>
+    </ng-template>
+
+    <div class="select-tasks-section">
+      <div class="filters-row">
+        <div class="form-field">
+          <label for="statusFilter">Status</label>
+          <p-multiselect
+            id="statusFilter"
+            [options]="statusFilterOptions"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="selectedStatuses()"
+            (ngModelChange)="selectedStatuses.set($event); onStatusesChange()"
+            placeholder="Select status"
+            display="chip"
+            styleClass="status-filter"
+            panelStyleClass="jobtask-status-overlay"
+            appendTo="body"
+          />
+        </div>
+
+        <div class="form-field search-field">
+          <label for="taskSearch">Search</label>
+          <span class="search-wrap">
+            <i class="pi pi-search"></i>
+            <input
+              id="taskSearch"
+              type="text"
+              pInputText
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event); onSearchChange()"
+              placeholder="Search Job Task ID, Assignee, or Description"
+            />
+          </span>
+        </div>
+      </div>
+
+      @if (loadingTasks()) {
+        <div class="spinner-wrapper">
+          <p-progressSpinner strokeWidth="4" fill="transparent" />
+        </div>
+      } @else {
+        <p-table
+          [value]="releasableTasks()"
+          [(selection)]="selectedTasks"
+          dataKey="uniqId"
+          [rowHover]="true"
+          selectionMode="multiple"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 3rem">
+                <p-tableHeaderCheckbox />
+              </th>
+              <th>Job Task ID</th>
+              <th>Task Title</th>
+              <th>Assignee</th>
+              <th>Task Description</th>
+              <th>Status</th>
+              <th>Due Date</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-task>
+            <tr>
+              <td>
+                <p-tableCheckbox [value]="task" />
+              </td>
+              <td>{{ task.jobTaskId }}</td>
+              <td>{{ task.taskTitle }}</td>
+              <td>{{ task.assignee?.name || '-' }}</td>
+              <td>{{ task.taskDescription || '-' }}</td>
+              <td>{{ task.jobStatus }}</td>
+              <td>{{ task.dueDate | date:'dd/MM/yyyy' }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="empty-cell">No releasable job tasks found.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </div>
+
+    <div class="add-actions">
+      <p-button label="Cancel" severity="secondary" (onClick)="cancel()" />
+      <p-button
+        label="Add Selected Tasks"
+        icon="pi pi-check"
+        [disabled]="!canSubmit()"
+        [loading]="submitting()"
+        (onClick)="submit()"
+      />
+    </div>
+  </p-card>
+</div>

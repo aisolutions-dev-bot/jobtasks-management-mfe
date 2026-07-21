@@ -8,6 +8,8 @@ import {
   JobTask,
   Status,
   TaskRelease,
+  TaskReleaseDetail,
+  UpdateTaskReleaseRequest,
 } from '../models/task.model';
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +24,26 @@ export class TaskReleaseService {
 
   create(req: CreateTaskReleaseRequest): Observable<TaskRelease> {
     return this.http.post<TaskRelease>(this.base, req);
+  }
+
+  getDetail(id: number): Observable<TaskReleaseDetail> {
+    return this.http.get<TaskReleaseDetail>(`${this.base}/${id}`);
+  }
+
+  update(id: number, req: UpdateTaskReleaseRequest): Observable<TaskRelease> {
+    return this.http.put<TaskRelease>(`${this.base}/${id}`, req);
+  }
+
+  addJobTasks(id: number, jobTaskIds: number[]): Observable<TaskReleaseDetail> {
+    return this.http.post<TaskReleaseDetail>(`${this.base}/${id}/tasks`, { jobTaskIds });
+  }
+
+  removeJobTask(id: number, jobTaskUniqId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}/tasks/${jobTaskUniqId}`);
+  }
+
+  deleteRelease(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
   }
 
   /**
