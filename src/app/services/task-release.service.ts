@@ -26,6 +26,11 @@ export class TaskReleaseService {
     return this.http.post<TaskRelease>(this.base, req);
   }
 
+  /** Preview only — the authoritative Release ID is assigned server-side at creation time. */
+  getNextReleaseId(): Observable<{ releaseId: string }> {
+    return this.http.get<{ releaseId: string }>(`${this.base}/next-release-id`);
+  }
+
   getDetail(id: number): Observable<TaskReleaseDetail> {
     return this.http.get<TaskReleaseDetail>(`${this.base}/${id}`);
   }

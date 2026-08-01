@@ -20,27 +20,31 @@
 
     <div class="add-form-grid">
       <div class="form-field">
-        <label for="releaseId">Release ID <span class="required">*</span></label>
+        <label for="releaseId">Release ID</label>
         <input
           id="releaseId"
           type="text"
           pInputText
-          [ngModel]="releaseId()"
-          (ngModelChange)="releaseId.set($event)"
-          placeholder="e.g. REL-2026-0001"
+          [value]="releaseId() ?? 'Generating…'"
+          readonly
+          disabled
         />
       </div>
 
       <div class="form-field">
-        <label for="releaseVersion">Release Version <span class="required">*</span></label>
-        <input
-          id="releaseVersion"
-          type="text"
-          pInputText
-          [ngModel]="releaseVersion()"
-          (ngModelChange)="releaseVersion.set($event)"
-          placeholder="e.g. v1.4.0"
+        <label for="releaseType">Release Type <span class="required">*</span></label>
+        <p-select
+          id="releaseType"
+          [options]="releaseTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="releaseType()"
+          (ngModelChange)="releaseType.set($event)"
+          placeholder="Select release type"
         />
+        @if (nextVersionPreview(); as preview) {
+          <span class="version-preview">Current: {{ currentVersion() }} &rarr; Next: {{ preview }}</span>
+        }
       </div>
 
       <div class="form-field">

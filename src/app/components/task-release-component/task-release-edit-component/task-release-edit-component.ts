@@ -48,9 +48,12 @@ export class TaskReleaseEditComponent implements OnInit {
 
   // ── Form fields ─────────────────────────────────────────────────────
   releaseIdField = signal('');
-  releaseVersion = signal('');
   releaseDate: Date | null = null;
   releaseRemarks = signal('');
+
+  // ── Read-only display fields ───────────────────────────────────────
+  displayVersion = signal('');
+  displayReleaseType = signal('');
 
   submitting = signal(false);
 
@@ -87,7 +90,8 @@ export class TaskReleaseEditComponent implements OnInit {
     this.taskReleaseService.getDetail(id).subscribe({
       next: data => {
         this.releaseIdField.set(data.releaseId);
-        this.releaseVersion.set(data.releaseVersion);
+        this.displayVersion.set(data.releaseVersion);
+        this.displayReleaseType.set(data.releaseType ?? '');
         this.releaseDate = data.releaseDate ? new Date(data.releaseDate) : null;
         this.releaseRemarks.set(data.releaseRemarks ?? '');
         this.loadingState.set(LoadingState.Success);
@@ -101,7 +105,6 @@ export class TaskReleaseEditComponent implements OnInit {
 
   canSubmit(): boolean {
     return this.releaseIdField().trim().length > 0
-      && this.releaseVersion().trim().length > 0
       && this.releaseDate !== null
       && !this.submitting();
   }
@@ -116,7 +119,6 @@ export class TaskReleaseEditComponent implements OnInit {
     const req: UpdateTaskReleaseRequest = {
       releaseId:      this.releaseIdField().trim(),
       releaseDate:    this.toLocalDateStr(this.releaseDate)!,
-      releaseVersion: this.releaseVersion().trim(),
       releaseRemarks: this.releaseRemarks().trim() || undefined,
       lastEditStaff:  this.getLoggedInStaffId() ?? undefined,
     };

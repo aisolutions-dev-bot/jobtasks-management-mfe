@@ -18,6 +18,9 @@ ARG GIT_BRANCH=$GIT_BRANCH
 ARG RAILWAY_GIT_COMMIT_SHA
 ENV GIT_COMMIT_SHA=$RAILWAY_GIT_COMMIT_SHA
 
+ARG ORG_API_URL
+ENV ORG_API_URL=${ORG_API_URL}
+
 # Write version.json (version/commit/build time) so the running app can detect new deploys
 RUN node scripts/write-version.js
 

@@ -136,11 +136,14 @@ export interface FilterState {
 
 // ─── Task Release ──────────────────────────────────────────────────────────
 
+export type ReleaseType = 'MAJOR' | 'MINOR' | 'PATCH';
+
 export interface TaskRelease {
   uniqId:         number;
   releaseId:      string;
   releaseDate:    string;
   releaseVersion: string;
+  releaseType:    ReleaseType | null;
   releaseRemarks: string | null;
   entryStaff:     string | null;
   entryDate:      string | null;
@@ -150,9 +153,8 @@ export interface TaskRelease {
 }
 
 export interface CreateTaskReleaseRequest {
-  releaseId:      string;
   releaseDate:    string;       // ISO date YYYY-MM-DD
-  releaseVersion: string;
+  releaseType:    ReleaseType;
   releaseRemarks?: string;
   entryStaff?:    string;
   jobTaskIds:     number[];     // m24JobTasks.UniqID values
@@ -165,7 +167,6 @@ export interface TaskReleaseDetail extends TaskRelease {
 export interface UpdateTaskReleaseRequest {
   releaseId:      string;
   releaseDate:    string;       // ISO date YYYY-MM-DD
-  releaseVersion: string;
   releaseRemarks?: string;
   lastEditStaff?: string;
 }

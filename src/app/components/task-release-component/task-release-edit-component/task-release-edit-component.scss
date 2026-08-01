@@ -112,6 +112,12 @@
   }
 }
 
+.readonly-value {
+  font-size: 0.9rem;
+  color: var(--p-text-color);
+  font-weight: 500;
+}
+
 .form-field-wide {
   grid-column: 1 / -1;
 }
