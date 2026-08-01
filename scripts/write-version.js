@@ -10,7 +10,8 @@ async function resolveVersion() {
     return pkg.version;
   }
   try {
-    const res = await fetch(`${orgApiUrl}/system-parameters/version`, { signal: AbortSignal.timeout(5000) });
+    const base = orgApiUrl.replace(/\/api\/?$/, '');
+    const res = await fetch(`${base}/api/system-parameters/version`, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) {
       throw new Error(`org-api responded with ${res.status}`);
     }
