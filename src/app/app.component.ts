@@ -56,6 +56,7 @@ export class AppComponent implements OnInit {
   me           = signal<Staff | null>(null);
   activeView      = signal<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
   searchQuery     = signal('');
+  assigneeSearchQuery = signal('');
   selectedStatuses = signal<Status[]>(['Pending', 'In Progress']);
 
   readonly statusFilterOptions: { label: string; value: Status }[] = [
@@ -63,6 +64,7 @@ export class AppComponent implements OnInit {
     { label: 'In Progress', value: 'In Progress' },
     { label: 'On Hold',     value: 'On Hold'      },
     { label: 'Completed',   value: 'Completed'   },
+    { label: 'Tested',      value: 'Tested'      },
     { label: 'Closed',      value: 'Closed'      },
     { label: 'Cancelled',   value: 'Cancelled'   },
   ];
@@ -194,6 +196,7 @@ export class AppComponent implements OnInit {
   filteredTasks = computed(() => {
     let list = this.tasks();
     const q        = this.searchQuery().toLowerCase().trim();
+    const aq       = this.assigneeSearchQuery().toLowerCase().trim();
     const me       = this.me();
     const v        = this.activeView();
     const statuses = this.selectedStatuses();
@@ -204,12 +207,15 @@ export class AppComponent implements OnInit {
       list = list.filter(t => t.assignee?.staffId === me.staffId);
     if (statuses.length > 0)
       list = list.filter(t => statuses.includes(t.jobStatus as Status));
+    // Contents search (title / id / description) and assignee search are independent
+    // and AND together, so you can narrow by assignee AND by contents at the same time.
     if (q) list = list.filter(t =>
       t.taskTitle.toLowerCase().includes(q) ||
       t.jobTaskId?.toLowerCase().includes(q) ||
-      (t.taskDescription ?? '').toLowerCase().includes(q) ||
-      (t.assignee?.name ?? '').toLowerCase().includes(q) ||
-      (t.assignee?.staffId ?? '').toLowerCase().includes(q));
+      (t.taskDescription ?? '').toLowerCase().includes(q));
+    if (aq) list = list.filter(t =>
+      (t.assignee?.name ?? '').toLowerCase().includes(aq) ||
+      (t.assignee?.staffId ?? '').toLowerCase().includes(aq));
     return list;
   });
 
@@ -577,7 +583,7 @@ export class AppComponent implements OnInit {
    *  In Progress → assignee only, current must be Pending
    *  Completed   → assignee only, current must be In Progress
    *  Tested      → assignor only, current must be Completed (task is handed back to assignor to verify)
-   *  Closed      → assignor only, current must be Completed
+   *  Closed      → assignor only, current must be Completed or Tested
    *  Cancelled   → assignor only, current must be active (Pending / In Progress / On Hold)
    */
   isStatusAllowed(targetStatus: Status): boolean {
@@ -591,7 +597,7 @@ export class AppComponent implements OnInit {
       case 'In Progress': return isee && cur === 'Pending';
       case 'Completed':   return isee && cur === 'In Progress';
       case 'Tested':      return isor && cur === 'Completed';
-      case 'Closed':      return isor && cur === 'Completed';
+      case 'Closed':      return isor && (cur === 'Completed' || cur === 'Tested');
       case 'Cancelled':   return isor && (cur === 'Pending' || cur === 'In Progress' || cur === 'On Hold');
       default:            return false;
     }
@@ -613,7 +619,7 @@ export class AppComponent implements OnInit {
       case 'Tested':      return !isor ? 'Only assignor can mark as tested'
                                : cur !== 'Completed' ? 'Must be Completed to mark as tested' : '';
       case 'Closed':      return !isor ? 'Only assignor can close'
-                               : cur !== 'Completed' ? 'Must be Completed to close' : '';
+                               : (cur !== 'Completed' && cur !== 'Tested') ? 'Must be Completed or Tested to close' : '';
       case 'Cancelled':   return !isor ? 'Only assignor can cancel'
                                : (cur === 'Completed' || cur === 'Closed' || cur === 'Cancelled')
                                    ? 'Cannot cancel a completed or closed task' : '';
