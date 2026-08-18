@@ -7,6 +7,7 @@
     "start": "ng serve",
     "build": "ng build",
     "build:staging": "ng build --configuration=staging",
+    "build:preview": "ng build --configuration=preview",
     "build:prod": "ng build --configuration=production",
     "watch": "ng build --watch --configuration development"
   },

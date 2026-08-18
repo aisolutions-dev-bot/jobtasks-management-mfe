@@ -24,9 +24,11 @@ ENV ORG_API_URL=${ORG_API_URL}
 # Write version.json (version/commit/build time) so the running app can detect new deploys
 RUN node scripts/write-version.js
 
-# Build Angular app for production or staging
+# Build Angular app for production, staging, or preview
 RUN if [ "$GIT_BRANCH" = "staging" ]; then \
     pnpm run build:staging; \
+    elif [ "$GIT_BRANCH" = "preview" ]; then \
+    pnpm run build:preview; \
     else \
     pnpm run build:prod; \
     fi

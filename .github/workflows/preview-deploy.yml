@@ -1,0 +1,55 @@
+name: Build & Deploy Preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/aisolutions-dev-bot/jobtasks-management-mfe
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build image
+        run: docker build --build-arg GIT_BRANCH=preview -t ${{ env.IMAGE }}:${{ env.IMAGE_TAG }} -t ${{ env.IMAGE }}:latest .
+
+      - name: Push
+        run: |
+          docker push ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.IMAGE }}:latest
+
+  deploy:
+    runs-on: [self-hosted, preview-vps]
+    needs: build
+    steps:
+      - name: Login to GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u BCIDev25 --password-stdin
+
+      - name: Pull new image
+        run: docker pull ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
+
+      - name: Deploy on VPS
+        working-directory: /home/ubuntu/deploy/preview
+        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f jobtasks-mfe.preview.yml up -d
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8085; then
+              echo "HEALTHY"; exit 0
+            fi
+            sleep 10
+          done
+          IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f /home/ubuntu/deploy/preview/jobtasks-mfe.preview.yml ps
+          exit 1
