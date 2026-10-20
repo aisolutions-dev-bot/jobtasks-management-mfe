@@ -1,0 +1,16 @@
+<div class="robot-overlay" aria-busy="true">
+  <div class="robot-card" [class.loading]="mode() === 'loading'" [class.saving]="mode() === 'saving'">
+    <div class="stage">
+      @if (mode() === 'saving') {
+        <span class="ring" aria-hidden="true"></span>
+      }
+      <img class="robot" [src]="robotSrc" alt="" />
+      @if (mode() === 'saving') {
+        <span class="antenna" aria-hidden="true"></span>
+      } @else {
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+      }
+    </div>
+    <div class="status" role="status" aria-live="polite">{{ message() }}</div>
+  </div>
+</div>

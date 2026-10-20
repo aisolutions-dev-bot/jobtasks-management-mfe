@@ -1,9 +1,11 @@
-<!-- RBAC loading -->
+<!-- Robot busy overlay: "Loading" while fetching, "Saving" while a change is in flight -->
+@if (busyOverlay(); as busy) {
+  <robot-busy-overlay [mode]="busy.mode" [message]="busy.message" />
+}
+
+<!-- RBAC loading (robot overlay covers this) -->
 @if (rbacLoading()) {
-  <div class="empty-state">
-    <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
-    <p>Checking access...</p>
-  </div>
+  <div class="empty-state"></div>
 } @else if (accessDenied()) {
   <div class="empty-state">
     <i class="pi pi-lock" style="font-size:3rem;color:var(--p-text-muted-color)"></i>
@@ -82,10 +84,8 @@
 
 <!-- ── TASK GRID ── -->
 @if (loading()) {
-  <div class="empty-state">
-    <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
-    <p>Loading tasks...</p>
-  </div>
+  <!-- robot overlay covers this while tasks load -->
+  <div class="empty-state"></div>
 } @else if (filteredTasks().length === 0) {
   <div class="empty-state">
     <i class="pi pi-inbox" style="font-size:3rem;color:var(--p-text-muted-color)"></i>
@@ -426,7 +426,7 @@
   <ng-template pTemplate="footer">
     <div class="date-dialog-footer">
       <p-button label="Cancel" [outlined]="true" severity="secondary" (onClick)="onDateDialogCancel()" />
-      <p-button label="Confirm" icon="pi pi-check" (onClick)="onDateDialogConfirm()" />
+      <p-button label="Confirm" icon="pi pi-check" [disabled]="!!saving()" (onClick)="onDateDialogConfirm()" />
     </div>
   </ng-template>
 </p-dialog>
@@ -771,7 +771,7 @@
                   (onClick)="wizardNext()" />
       } @else {
         <p-button label="Create & assign" icon="pi pi-check"
-                  [disabled]="!canNext()"
+                  [disabled]="!canNext() || !!saving()"
                   (onClick)="submitTask()" />
       }
     </div>

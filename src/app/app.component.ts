@@ -18,12 +18,14 @@ import { DrawerModule } from 'primeng/drawer';
 import { TooltipModule } from 'primeng/tooltip';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { forkJoin } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
+import { catchError, finalize, map, switchMap } from 'rxjs/operators';
 
 import { JobTask, Staff, Status, TaskType, Priority, CreateJobTaskRequest, TaskAttachment, UpdateProgressRemarksRequest, ReassignRequest, RescheduleRequest } from './models/task.model';
 import { IAuthService } from './models/auth';
 import { TaskService } from './services/task.service';
 import { StaffService } from './services/staff.service';
+import { RobotBusyOverlayComponent, RobotBusyMode } from './components/robot-busy-overlay/robot-busy-overlay.component';
 
 @Component({
   selector: 'app-root',
@@ -34,6 +36,7 @@ import { StaffService } from './services/staff.service';
     DialogModule, ToastModule, AvatarModule,
     DividerModule, DatePickerModule, TextareaModule, SkeletonModule,
     DrawerModule, TooltipModule, MultiSelectModule,
+    RobotBusyOverlayComponent,
   ],
   providers: [MessageService],
   templateUrl: './app.component.html',
@@ -71,6 +74,18 @@ export class AppComponent implements OnInit {
   loading      = signal(false);
   accessDenied = signal(false);   // true when a2401 = 0
   rbacLoading  = signal(true);    // true while checking RBAC
+
+  /** Message for the save currently in flight; null when idle. Also blocks a second save. */
+  saving       = signal<string | null>(null);
+
+  /** Robot overlay shown over the page: saving takes precedence over loading. */
+  busyOverlay = computed<{ mode: RobotBusyMode; message: string } | null>(() => {
+    const savingMessage = this.saving();
+    if (savingMessage)      return { mode: 'saving',  message: savingMessage };
+    if (this.rbacLoading()) return { mode: 'loading', message: 'Checking access…' };
+    if (this.loading())     return { mode: 'loading', message: 'Loading your tasks…' };
+    return null;
+  });
 
   filteredStaff = computed(() => {
     const q = this.staffSearchQuery().toLowerCase().trim();
@@ -304,6 +319,15 @@ export class AppComponent implements OnInit {
     }
   }
 
+  /**
+   * Shows the saving robot until the request settles. Callers check `saving()`
+   * first so a double click cannot submit the same change twice.
+   */
+  private withSaving<T>(message: string, source: Observable<T>): Observable<T> {
+    this.saving.set(message);
+    return source.pipe(finalize(() => this.saving.set(null)));
+  }
+
   // ── Interactions ──────────────────────────────────────────────────────────
 
   openTask(task: JobTask) {
@@ -339,13 +363,13 @@ export class AppComponent implements OnInit {
   confirmReassign() {
     const task    = this.selectedTask();
     const newStaff = this.selectedNewAssignee();
-    if (!task || !newStaff) return;
+    if (!task || !newStaff || this.saving()) return;
     this.reassigning.set(true);
     const req: ReassignRequest = {
       newAssigneeStaffId: newStaff.staffId,
       lastEditStaff:      this.me()?.staffId,
     };
-    this.taskService.reassign(task.uniqId, req).subscribe({
+    this.withSaving('Reassigning task…', this.taskService.reassign(task.uniqId, req)).subscribe({
       next: updated => {
         this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
         this.selectedTask.set(updated);
@@ -395,13 +419,13 @@ export class AppComponent implements OnInit {
 
   confirmReschedule() {
     const task = this.selectedTask();
-    if (!task) return;
+    if (!task || this.saving()) return;
     this.rescheduling.set(true);
     const req: RescheduleRequest = {
       newDueDate:    this.toLocalDateStr(this.newScheduleDate),
       lastEditStaff: this.me()?.staffId,
     };
-    this.taskService.reschedule(task.uniqId, req).subscribe({
+    this.withSaving('Rescheduling task…', this.taskService.reschedule(task.uniqId, req)).subscribe({
       next: updated => {
         this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
         this.selectedTask.set(updated);
@@ -629,7 +653,7 @@ export class AppComponent implements OnInit {
 
   /** Called from template when a status button is clicked */
   onStatusButtonClick(targetStatus: Status) {
-    if (!this.isStatusAllowed(targetStatus)) return;
+    if (!this.isStatusAllowed(targetStatus) || this.saving()) return;
     const task = this.selectedTask(); if (!task) return;
 
     if (targetStatus === 'In Progress') {
@@ -674,8 +698,10 @@ export class AppComponent implements OnInit {
   }
 
   private applyStatusChange(status: Status, startedDate: string | null, completedDate: string | null) {
-    const task = this.selectedTask(); if (!task) return;
-    this.taskService.updateStatus(task.uniqId, status, this.me()?.staffId ?? '', startedDate, completedDate).subscribe({
+    const task = this.selectedTask(); if (!task || this.saving()) return;
+    this.withSaving('Updating status…',
+      this.taskService.updateStatus(task.uniqId, status, this.me()?.staffId ?? '', startedDate, completedDate),
+    ).subscribe({
       next: updated => {
         this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
         this.selectedTask.set(updated);
@@ -713,13 +739,13 @@ export class AppComponent implements OnInit {
 
   saveProgressRemarks() {
     const task = this.selectedTask();
-    if (!task) return;
+    if (!task || this.saving()) return;
     this.savingProgressRemarks.set(true);
     const req: UpdateProgressRemarksRequest = {
       progressRemarks: this.editProgressRemarksValue() || null,
       lastEditStaff:   this.me()?.staffId,
     };
-    this.taskService.updateProgressRemarks(task.uniqId, req).subscribe({
+    this.withSaving('Saving progress remarks…', this.taskService.updateProgressRemarks(task.uniqId, req)).subscribe({
       next: updated => {
         this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
         this.selectedTask.set(updated);
@@ -736,9 +762,9 @@ export class AppComponent implements OnInit {
 
   saveDesc() {
     const task = this.selectedTask();
-    if (!task) return;
+    if (!task || this.saving()) return;
     this.savingDesc.set(true);
-    this.taskService.update(task.uniqId, {
+    this.withSaving('Saving description…', this.taskService.update(task.uniqId, {
       taskTitle:       task.taskTitle,
       taskType:        task.taskType as any,
       taskDescription: this.editDescValue(),
@@ -746,7 +772,7 @@ export class AppComponent implements OnInit {
       priority:        task.priority as any,
       dueDate:         task.dueDate ? task.dueDate.split('T')[0] : null,
       lastEditStaff:   this.me()?.staffId,
-    }).subscribe({
+    })).subscribe({
       next: updated => {
         this.tasks.update(list => list.map(t => t.uniqId === updated.uniqId ? updated : t));
         this.selectedTask.set(updated);
@@ -806,12 +832,12 @@ export class AppComponent implements OnInit {
 
   uploadDetailFiles() {
     const task = this.selectedTask();
-    if (!task?.jobTaskId || this.detailPendingFiles().length === 0) return;
+    if (!task?.jobTaskId || this.detailPendingFiles().length === 0 || this.saving()) return;
     this.uploadingDetail.set(true);
     const uploads = this.detailPendingFiles().map(pf =>
       this.taskService.uploadAttachment(task.jobTaskId!, pf.file, this.me()?.staffId)
     );
-    forkJoin(uploads).subscribe({
+    this.withSaving('Uploading files…', forkJoin(uploads)).subscribe({
       next: () => {
         this.detailPendingFiles.set([]);
         this.uploadingDetail.set(false);
@@ -827,13 +853,14 @@ export class AppComponent implements OnInit {
 
   onDeleteTask() {
     const task = this.selectedTask();
-    if (!task || !confirm('Delete this task?')) return;
-    this.taskService.delete(task.uniqId).subscribe({
+    if (!task || this.saving() || !confirm('Delete this task?')) return;
+    this.withSaving('Deleting task…', this.taskService.delete(task.uniqId)).subscribe({
       next: () => {
         this.tasks.update(list => list.filter(t => t.uniqId !== task.uniqId));
         this.showDetail.set(false);
         this.msgService.add({ severity: 'success', summary: 'Task deleted', life: 2000 });
       },
+      error: () => this.msgService.add({ severity: 'error', summary: 'Failed to delete task', life: 3000 }),
     });
   }
 
@@ -860,7 +887,7 @@ export class AppComponent implements OnInit {
   submitTask() {
     const me       = this.me();
     const assignee = this.newAssignee();
-    if (!me || !assignee) return;
+    if (!me || !assignee || this.saving()) return;
 
     const req: CreateJobTaskRequest = {
       taskTitle:       this.newTitle().trim(),
@@ -872,32 +899,37 @@ export class AppComponent implements OnInit {
       dueDate:         this.toLocalDateStr(this.newDueDate),
       entryStaff:      me.staffId,
     };
+    const filesToUpload = this.pendingFiles();
 
-    this.taskService.create(req).subscribe({
-      next: created => {
+    // One saving window covers the create and any attachment uploads, so the
+    // overlay stays up (and the button stays blocked) until everything is done.
+    const save$ = this.taskService.create(req).pipe(
+      switchMap(created => {
         this.tasks.update(list => [created, ...list]);
-        const filesToUpload = this.pendingFiles();
         this.pendingFiles.set([]);
+        if (filesToUpload.length === 0 || !created.jobTaskId) {
+          return of({ uploadFailed: false });
+        }
+        this.saving.set('Uploading attachments…');
+        const uploads = filesToUpload.map(pf =>
+          this.taskService.uploadAttachment(created.jobTaskId!, pf.file, me.staffId)
+        );
+        return forkJoin(uploads).pipe(
+          map(() => ({ uploadFailed: false })),
+          // Task was saved — only attachment upload failed
+          catchError(() => of({ uploadFailed: true })),
+        );
+      }),
+    );
 
-        // Upload any pending attachments now that we have the jobTaskId
-        if (filesToUpload.length > 0 && created.jobTaskId) {
-          const uploads = filesToUpload.map(pf =>
-            this.taskService.uploadAttachment(created.jobTaskId!, pf.file, me.staffId)
-          );
-          forkJoin(uploads).subscribe({
-            next: () => {
-              this.showWizard.set(false);
-              this.msgService.add({ severity: 'success', summary: 'Task created!', detail: `${filesToUpload.length} file(s) uploaded`, life: 2000 });
-            },
-            error: () => {
-              // Task was saved — only attachment upload failed; close wizard and warn
-              this.showWizard.set(false);
-              this.msgService.add({ severity: 'warn', summary: 'Task created', detail: 'Some attachments failed to upload', life: 4000 });
-            },
-          });
+    this.withSaving('Creating task…', save$).subscribe({
+      next: ({ uploadFailed }) => {
+        this.showWizard.set(false);
+        if (uploadFailed) {
+          this.msgService.add({ severity: 'warn', summary: 'Task created', detail: 'Some attachments failed to upload', life: 4000 });
+        } else if (filesToUpload.length > 0) {
+          this.msgService.add({ severity: 'success', summary: 'Task created!', detail: `${filesToUpload.length} file(s) uploaded`, life: 2000 });
         } else {
-          // No attachments — close immediately
-          this.showWizard.set(false);
           this.msgService.add({ severity: 'success', summary: 'Task created!', life: 2000 });
         }
       },

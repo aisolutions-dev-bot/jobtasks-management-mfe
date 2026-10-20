@@ -1,0 +1,130 @@
+// Motion and palette follow the "AI Solutions | Robot Activity" reference
+// (01 Loading / 02 Saving).
+:host {
+  --robot-surface: #ffffff;
+  --robot-text:    #334e47;
+  --robot-line:    #d7e2dc;
+  --robot-brand:   #556d69;
+  --robot-accent:  #a3c7b4;
+}
+
+.robot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000; // above PrimeNG dialogs/drawers so saves started inside a dialog are covered too
+  display: grid;
+  place-items: center;
+  background: rgba(238, 243, 240, 0.72);
+  backdrop-filter: blur(2px);
+  cursor: wait;
+  animation: overlay-in 0.18s ease-out;
+}
+
+.robot-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 220px;
+  padding: 18px 28px 22px;
+  background: var(--robot-surface);
+  border: 1px solid var(--robot-line);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(23, 62, 36, 0.12);
+}
+
+.stage {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  display: grid;
+  place-items: center;
+  perspective: 600px;
+}
+
+.robot {
+  position: relative;
+  z-index: 1;
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+}
+
+.status {
+  min-height: 24px;
+  font: 600 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--robot-text);
+}
+
+// ── 01 Loading: float + gentle glance ────────────────────────────────────────
+.loading .robot { animation: float 2.6s ease-in-out infinite; }
+
+.dots {
+  position: absolute;
+  bottom: 8px;
+  display: flex;
+  gap: 7px;
+
+  i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--robot-brand);
+    animation: dot 1.3s infinite ease-in-out;
+
+    &:nth-child(2) { animation-delay: 0.16s; }
+    &:nth-child(3) { animation-delay: 0.32s; }
+  }
+}
+
+// ── 02 Saving: pulsing antenna + orbit ───────────────────────────────────────
+.saving .robot { animation: breathe 2s ease-in-out infinite; }
+
+.ring {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 2px solid var(--robot-line);
+  border-top-color: var(--robot-accent);
+  border-right-color: var(--robot-accent);
+  animation: spin 1.6s linear infinite;
+}
+
+.antenna {
+  position: absolute;
+  z-index: 2;
+  top: 22px; // sits on the robot's antenna tip (robot image starts 30px down the 170px stage)
+  left: calc(50% - 9px);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(163, 199, 180, 0.33);
+  box-shadow: 0 0 0 5px rgba(163, 199, 180, 0.13);
+  pointer-events: none;
+  animation: glow 1.3s ease-in-out infinite;
+}
+
+@keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotateY(-20deg) rotate(-3deg); }
+  50%      { transform: translateY(-7px) rotateY(20deg) rotate(3deg); }
+}
+@keyframes breathe {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes glow {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+@keyframes dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40%           { opacity: 1;    transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot-overlay, .robot, .ring, .antenna, .dots i { animation: none !important; }
+  .dots i  { opacity: 0.65; }
+  .antenna { opacity: 0.6; }
+}
